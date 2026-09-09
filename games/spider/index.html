@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spider Solitaire · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-suit">♠</span>
+        <h1>Spider Solitaire</h1>
+      </div>
+      <p class="start-sub">Wähle einen Schwierigkeitsgrad, um zu starten</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <label class="loesbar-schalter">
+        <input type="checkbox" id="loesbar-check">
+        <span class="loesbar-kasten" aria-hidden="true"></span>
+        <span class="loesbar-text">
+          <strong>Aussichtslose Blätter überspringen</strong>
+          <small>Nur bei Mittel – gemischt wird normal, verworfen wird nur, was von vornherein nicht zu schaffen ist</small>
+        </span>
+      </label>
+
+      <div class="start-options">
+        <button class="start-btn" data-value="1">
+          <span class="start-btn-title">Leicht</span>
+          <span class="start-btn-sub">1 Farbe</span>
+        </button>
+        <button class="start-btn" data-value="2">
+          <span class="start-btn-title">Mittel</span>
+          <span class="start-btn-sub">2 Farben</span>
+        </button>
+        <button class="start-btn" data-value="4">
+          <span class="start-btn-title">Schwer</span>
+          <span class="start-btn-sub">4 Farben</span>
+        </button>
+      </div>
+
+      <div id="start-stats">
+        <h2>Statistiken</h2>
+        <div class="stats-scope">
+          <button type="button" class="stats-scope-btn aktiv" data-scope="zufall">Gemischt</button>
+          <button type="button" class="stats-scope-btn" data-scope="loesbar">Lösbar</button>
+        </div>
+        <table id="stats-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Leicht</th>
+              <th>Mittel</th>
+              <th>Schwer</th>
+            </tr>
+          </thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-suit">♠</span>
+        <h1>Spider Solitaire</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Modus</span>
+          <span class="stat-value" id="difficulty-label">Leicht</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Züge</span>
+          <span class="stat-value" id="move-count">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Folgen</span>
+          <span class="stat-value"><span id="completed-count">0</span>/8</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Stapel</span>
+          <span class="stat-value" id="stock-count">5</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="board">
+      <div id="side-rail">
+        <div id="stock-pile" title="Karten austeilen"></div>
+      </div>
+      <div id="tableau"></div>
+      <div id="foundations-rail">
+        <div id="foundations"></div>
+      </div>
+    </main>
+
+    <footer id="game-footer">
+      <div id="size-controls">
+        <button id="size-down" class="action-btn" title="Karten verkleinern">−</button>
+        <button id="size-reset" class="action-btn" title="Kartengröße zurücksetzen">100%</button>
+        <button id="size-up" class="action-btn" title="Karten vergrößern">+</button>
+      </div>
+      <div id="footer-tools">
+        <button id="deadlock-btn" class="action-btn" title="Kennt alle Karten, auch die verdeckten: Ist diese Stellung überhaupt noch zu gewinnen? Bleibt es offen, wurde in der Zeit kein Weg gefunden und der Stellungsraum war zu groß, um das Gegenteil zu beweisen – nochmal drücken sucht weiter.">
+          <span class="icon">🔍</span>Zugcheck
+        </button>
+        <button id="hint-btn" class="action-btn" title="Zeigt, womit sich eine verdeckte Karte aufdecken oder etwas kostenlos zusammenlegen lässt">
+          <span class="icon">💡</span>Bester Zug
+        </button>
+      </div>
+      <div id="footer-actions">
+        <button id="new-game-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="undo-btn" class="action-btn">
+          <span class="icon">↺</span>Rückgängig
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="win-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="win-box">
+      <h2>Geschafft! <span class="win-suits">♠ ♥ ♦ ♣</span></h2>
+      <p id="win-text"></p>
+      <p class="win-diff-label">Nächste Runde:</p>
+      <div class="win-diff-row">
+        <button class="win-diff-btn" data-value="1">Leicht<span>1 Farbe</span></button>
+        <button class="win-diff-btn" data-value="2">Mittel<span>2 Farben</span></button>
+        <button class="win-diff-btn" data-value="4">Schwer<span>4 Farben</span></button>
+      </div>
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

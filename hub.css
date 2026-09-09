@@ -1,0 +1,236 @@
+:root {
+  --felt-1: #0f6b3f;
+  --felt-2: #0a4a2c;
+  --felt-3: #083b23;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --accent: #f2c94c;
+  --ink: #eef3ef;
+  --ink-dim: #b7c7bd;
+  --ease-move: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+    radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  display: flex;
+  /* Automatische Ränder statt zentrierter Ausrichtung: Ist der Inhalt höher
+     als das Fenster, bliebe bei "align-items: center" der obere Teil
+     unerreichbar über dem Rand hängen. */
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+#hub {
+  margin: auto;
+  text-align: center;
+  max-width: 720px;
+  width: 100%;
+}
+
+.hub-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.hub-icon {
+  font-size: 2.4rem;
+  filter: drop-shadow(0 0 10px rgba(242,201,76,0.4));
+}
+
+.hub-brand h1 {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.hub-sub {
+  color: var(--ink-dim);
+  margin: 12px 0 40px;
+  font-size: 1rem;
+}
+
+.tile-grid {
+  display: grid;
+  /* Feste Dreierreihe: Fünf Kacheln teilen sich so 3 + 2 statt 4 + 1. */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 560px) {
+  .tile-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 160ms ease, transform 140ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.tile:hover {
+  background: var(--accent);
+  color: #241a04;
+  border-color: transparent;
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(242,201,76,0.35);
+}
+
+.tile-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.tile-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+
+
+/* ------------------------------------------------------------------
+   Statistiken über alle Spiele
+   ------------------------------------------------------------------ */
+
+#hub-stats {
+  margin-top: 38px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  background: rgba(0,0,0,0.22);
+  text-align: left;
+}
+
+#hub-stats h2 {
+  margin: 0 0 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+
+#hub-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+#hub-stats-table th,
+#hub-stats-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+#hub-stats-table thead th {
+  font-weight: 500;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+  text-align: right;
+}
+
+#hub-stats-table thead th:first-child { text-align: left; }
+#hub-stats-table tbody th { text-align: left; font-weight: 600; }
+
+#hub-stats-table tbody td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+#hub-stats-table tbody tr.gesamt th,
+#hub-stats-table tbody tr.gesamt td {
+  border-bottom: 0;
+  border-top: 1px solid rgba(242, 201, 76, 0.35);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+#hub-stats-leer { color: var(--ink-dim); font-size: 0.88rem; margin: 4px 0 0; }
+#hub-stats-leer.hidden { display: none; }
+#hub-stats-table.hidden { display: none; }
+
+#hub-stats-reset {
+  margin-top: 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 130ms ease, border-color 130ms ease;
+}
+
+#hub-stats-reset:hover { color: var(--ink); border-color: var(--accent); }
+
+/* =====================================================================
+   Kleine Bildschirme
+
+   Minesweeper und Puzzle setzen beide auf Dinge, die ein Telefon nicht
+   hat – die rechte Maustaste, das Mausrad, Tastenkürzel. Statt sie halb
+   bedienbar anzubieten, werden sie ausgeblendet und mit einem Satz erklärt.
+
+   Ausschlaggebend ist dafür nicht die Fenstergröße, sondern womit gezeigt
+   wird: "pointer: coarse" heißt Finger statt Maus. Ein kleingezogenes
+   Fenster am Rechner soll die beiden Spiele nämlich weiterhin anbieten –
+   die Maus ist ja da.
+   ===================================================================== */
+.rechner-hinweis {
+  display: none;
+  margin: 18px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+@media (pointer: coarse) {
+  .tile.nur-rechner {
+    display: none;
+  }
+
+  .rechner-hinweis {
+    display: block;
+  }
+}
+
+/* Die Tabelle dagegen hängt nur an der Breite. */
+@media (max-width: 720px) {
+
+  /* Fünf Spalten passen nicht auf ein Telefon; enger gesetzt schon. */
+  #hub-stats-table {
+    font-size: 0.76rem;
+  }
+
+  #hub-stats-table th,
+  #hub-stats-table td {
+    padding: 7px 4px;
+  }
+
+  #hub-stats-table thead th {
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+  }
+}

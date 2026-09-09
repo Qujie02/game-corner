@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-mark">◈</span>
+        <h1>Minesweeper</h1>
+      </div>
+      <p class="start-sub">Finde alle Felder, unter denen nichts verborgen ist</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <div class="mode-grid">
+
+        <section class="mode-group" data-group="classic">
+          <header class="mode-group-head">
+            <span class="mode-group-icon">◈</span>
+            <div class="mode-group-text">
+              <h2>Klassisch</h2>
+              <p>Wie gewohnt – manchmal bleibt nur noch raten</p>
+            </div>
+          </header>
+
+          <div class="start-options">
+            <button class="start-btn" data-mode="km">
+              <span class="start-btn-title">Mittel</span>
+              <span class="start-btn-sub">16×16 · 40 Fundstellen</span>
+            </button>
+            <button class="start-btn" data-mode="kh">
+              <span class="start-btn-title">Schwer</span>
+              <span class="start-btn-sub">24×16 · 75 Fundstellen</span>
+            </button>
+            <button class="start-btn" data-mode="ke">
+              <span class="start-btn-title">Extrem</span>
+              <span class="start-btn-sub">30×16 · 112 Fundstellen</span>
+            </button>
+          </div>
+
+          <table class="stats-table" data-group="classic">
+            <thead>
+              <tr><th></th><th>Mittel</th><th>Schwer</th><th>Extrem</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+        <section class="mode-group" data-group="noguess">
+          <header class="mode-group-head">
+            <span class="mode-group-icon">✓</span>
+            <div class="mode-group-text">
+              <h2>Ohne Raten</h2>
+              <p>Jedes Brett ist allein durch Logik lösbar</p>
+            </div>
+          </header>
+
+          <div class="start-options">
+            <button class="start-btn" data-mode="nm">
+              <span class="start-btn-title">Mittel</span>
+              <span class="start-btn-sub">16×16 · 40 Fundstellen</span>
+            </button>
+            <button class="start-btn" data-mode="nh">
+              <span class="start-btn-title">Schwer</span>
+              <span class="start-btn-sub">24×16 · 75 Fundstellen</span>
+            </button>
+            <button class="start-btn" data-mode="ne">
+              <span class="start-btn-title">Extrem</span>
+              <span class="start-btn-sub">30×16 · 112 Fundstellen</span>
+            </button>
+          </div>
+
+          <table class="stats-table" data-group="noguess">
+            <thead>
+              <tr><th></th><th>Mittel</th><th>Schwer</th><th>Extrem</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+
+      </div>
+
+      <details id="rules">
+        <summary>Spielregeln</summary>
+        <ul>
+          <li><strong>Linksklick</strong> deckt ein Feld auf. Die Zahl darin sagt, wie viele der acht Nachbarfelder eine Fundstelle verbergen.</li>
+          <li><strong>Rechtsklick</strong> setzt eine Markierung – oder nimmt sie wieder weg.</li>
+          <li><strong>Mittlere Maustaste</strong> auf einer Zahl, deren Markierungen vollständig sind, deckt alle übrigen Nachbarfelder auf einmal auf.</li>
+          <li>Der erste Klick ist immer sicher und öffnet ein zusammenhängendes Feld.</li>
+          <li>Im Modus <strong>Ohne Raten</strong> wird das Brett nach dem ersten Klick so gewählt, dass es sich vollständig herleiten lässt.</li>
+          <li>Auf <strong>Extrem</strong> wird nach einem Brett gesucht, bei dem etwa jede dritte Entscheidung verlangt, zwei Zahlen gegeneinander zu halten. Die Suche dauert nach dem ersten Klick ein paar Sekunden.</li>
+          <li><strong>Leertaste halten und am Mausrad drehen</strong> zoomt das Brett. Ohne die Taste bleibt das Rad frei – sonst käme es der mittleren Maustaste in die Quere.</li>
+          <li>Nach einem Fehltritt kann man <strong>weiterspielen</strong>. Die Partie zählt dann als verloren, egal wie es ausgeht.</li>
+        </ul>
+      </details>
+
+      <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-mark">◈</span>
+        <h1>Minesweeper</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Modus</span>
+          <span class="stat-value" id="mode-label">Mittel</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Offen</span>
+          <span class="stat-value"><span id="open-count">0</span>/<span id="open-total">216</span></span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Markiert</span>
+          <span class="stat-value"><span id="flag-count">0</span>/<span id="mine-total">40</span></span>
+        </div>
+      </div>
+    </header>
+
+    <main id="board-wrap">
+      <div id="board" role="grid" aria-label="Minesweeper-Spielfeld"></div>
+    </main>
+
+    <p id="status-text" class="is-empty">&nbsp;</p>
+
+    <footer id="game-footer">
+      <div id="footer-tools">
+        <span class="hint-chip">Links: aufdecken · Rechts: markieren · Mitte: umliegende öffnen · Leertaste + Rad: zoomen</span>
+      </div>
+      <div id="footer-actions">
+        <button id="result-btn" class="action-btn primary hidden">
+          <span class="icon">🏆</span>Auswertung
+        </button>
+        <button id="restart-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="back-btn" class="action-btn">
+          <span class="icon">←</span>Übersicht
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2 id="end-title">Geschafft!</h2>
+      <p id="end-text"></p>
+
+      <div class="end-actions">
+        <button id="continue-loss-btn" class="action-btn primary hidden">
+          <span class="icon">↷</span>Weiterspielen
+        </button>
+        <button id="end-back" class="action-btn">
+          <span class="icon">👁</span>Brett ansehen
+        </button>
+      </div>
+
+      <p class="end-label">Nächste Runde:</p>
+      <div class="end-groups">
+        <div class="end-group">
+          <span class="end-group-title">◈ Klassisch</span>
+          <div class="end-row">
+            <button class="end-mode-btn" data-mode="km">Mittel</button>
+            <button class="end-mode-btn" data-mode="kh">Schwer</button>
+            <button class="end-mode-btn" data-mode="ke">Extrem</button>
+          </div>
+        </div>
+        <div class="end-group">
+          <span class="end-group-title">✓ Ohne Raten</span>
+          <div class="end-row">
+            <button class="end-mode-btn" data-mode="nm">Mittel</button>
+            <button class="end-mode-btn" data-mode="nh">Schwer</button>
+            <button class="end-mode-btn" data-mode="ne">Extrem</button>
+          </div>
+        </div>
+      </div>
+
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

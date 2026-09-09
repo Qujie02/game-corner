@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-mark">🧩</span>
+        <h1>Puzzle</h1>
+      </div>
+      <p class="start-sub">Wähle Größe und Motiv</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <div id="groessen" class="groessen-reihe"></div>
+
+      <div id="schnitte" class="schnitt-reihe"></div>
+
+      <label class="einstellung" for="dreh-toggle">
+        <input type="checkbox" id="dreh-toggle">
+        <span class="einstellung-text">
+          <strong>Teile zufällig gedreht</strong>
+          <small>Schwerer: rechte Maustaste dreht ein Teil, die Leertaste zeigt die Vorlage</small>
+        </span>
+      </label>
+
+      <div id="motive" class="motiv-grid"></div>
+      <input type="file" id="datei" accept="image/*" hidden>
+
+      <p id="start-notice" class="hidden"></p>
+
+      <div id="start-stats">
+        <h2>Statistik · <span id="stats-titel">200 Teile</span></h2>
+        <table class="stats-table">
+          <tbody id="stats-table-body"></tbody>
+        </table>
+      </div>
+
+      <details id="rules">
+        <summary>So wird gespielt</summary>
+        <ul>
+          <li>Teile mit gedrückter Maustaste <strong>ziehen</strong>. Passen zwei Teile zusammen, rasten sie ein und wandern von da an gemeinsam.</li>
+          <li>Der <strong>Rahmen</strong> in der Mitte hat die Größe des fertigen Bildes. Wer ein Teil an seinen Platz darin zieht, setzt es fest – dort bleibt es liegen.</li>
+          <li>Die <strong>rechte Maustaste</strong> oder die <strong>Leertaste</strong> blenden das fertige Bild ein, solange sie gedrückt bleiben. Sind die Teile zufällig gedreht, dreht die rechte Maustaste ein getroffenes Teil nach rechts – auf freier Fläche zeigt sie weiterhin die Vorlage.</li>
+          <li>Mit gedrückter Taste <strong>M</strong> zieht die linke Maustaste ein Rechteck: Alles darin wird markiert und lässt sich gemeinsam verschieben. <strong>Esc</strong> hebt die Markierung auf.</li>
+          <li>Auf freier Fläche ziehen verschiebt den Tisch, das <strong>Mausrad</strong> zoomt.</li>
+          <li>Der Spielstand wird laufend gesichert – du kannst jederzeit aufhören.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-mark">🧩</span>
+        <h1>Puzzle</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Motiv</span>
+          <span class="stat-value" id="motiv-label">–</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Gelegt</span>
+          <span class="stat-value"><span id="done-count">0</span>/<span id="piece-total">0</span></span>
+        </div>
+      </div>
+    </header>
+
+    <main id="board-wrap">
+      <canvas id="tisch"></canvas>
+    </main>
+
+    <footer id="game-footer">
+      <div id="footer-tools">
+        <button id="preview-btn" class="action-btn" title="Rechte Maustaste zeigt die Vorlage, solange sie gedrückt ist">
+          <span class="icon">👁</span>Vorlage
+        </button>
+        <button id="sort-btn" class="action-btn" title="Einzeln liegende Teile außerhalb des Rahmens neu verteilen">
+          <span class="icon">✦</span>Teile ordnen
+        </button>
+        <button id="zoom-fit" class="action-btn" title="Ganzen Tisch zeigen">
+          <span class="icon">⤢</span>Übersicht
+        </button>
+        <div class="farb-zeile" title="Hintergrund des Spielfelds">
+          <div id="farb-tupfer" class="farb-tupfer"></div>
+          <label class="farb-frei" title="Freie Farbe wählen">
+            <input type="color" id="farb-wahl">
+          </label>
+        </div>
+      </div>
+      <div id="footer-actions">
+        <button id="result-btn" class="action-btn primary hidden">
+          <span class="icon">🏆</span>Auswertung
+        </button>
+        <button id="restart-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="back-btn" class="action-btn">
+          <span class="icon">←</span>Übersicht
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="loading-box">
+      <span class="loading-mark">🧩</span>
+      <p id="loading-text">Teile werden gestanzt …</p>
+    </div>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2>Fertig! <span class="end-mark">🧩</span></h2>
+      <p id="end-text"></p>
+
+      <button id="end-back" class="action-btn">
+        <span class="icon">👁</span>Bild ansehen
+      </button>
+
+      <div class="end-actions">
+        <button id="end-again" class="action-btn primary">
+          <span class="icon">↻</span>Neues Motiv
+        </button>
+      </div>
+
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="bilder/bilder.js"></script>
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

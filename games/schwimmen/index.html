@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schwimmen · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="title-icon">🃏</span>
+        <h1>Schwimmen</h1>
+      </div>
+      <p class="start-sub">Du gegen 2 Computer-Gegner</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <button id="start-btn" class="start-wide-btn">Neues Spiel starten</button>
+
+      <details id="rules">
+        <summary>Kurzregeln</summary>
+        <ul>
+          <li>Drei Karten <strong>einer Farbe</strong> zählen zusammen (Ass = 11, Bild = 10, Rest = Zahlwert). 31 ist das Maximum.</li>
+          <li>Drei Karten <strong>gleichen Werts</strong> zählen 30,5 Punkte.</li>
+          <li>Drei Siebenen ("<strong>Feuer</strong>") gewinnen die Runde sofort. Auch 31 Punkte ("<strong>Blitz</strong>") beendet die Runde sofort.</li>
+          <li>Drei <strong>Asse</strong> gewinnen die Runde ebenfalls sofort – die beiden anderen verlieren dabei je ein Leben, unabhängig von ihren Punkten.</li>
+          <li>Reihum: eine Karte tauschen (per Ziehen auf die Tischkarte), alle drei tauschen, schieben (passen) oder klopfen. Klopfen geht erst ab dem eigenen zweiten Zug einer Runde, nicht beim ersten.</li>
+          <li>Klopfen beendet die Runde nach einer letzten Runde für alle anderen. Schieben alle Spieler nacheinander, gibt es neue Tischkarten – genauso, wenn 7, 8 und 9 in der Mitte liegen.</li>
+          <li>Wer die niedrigste Punktzahl hat, verliert ein Leben. Bei 0 Leben ist man raus – <strong>außer</strong> beim allerersten Mal im ganzen Spiel: dann darf diese eine Person einmal "schwimmen" und bleibt dabei.</li>
+        </ul>
+      </details>
+
+      <div id="start-stats">
+        <h2>Statistiken</h2>
+        <table id="stats-table">
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="title-icon">🃏</span>
+        <h1>Schwimmen</h1>
+      </button>
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Runde</span>
+          <span class="stat-value" id="round-count">1</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Deine Leben</span>
+          <span class="stat-value" id="life-count">♥♥♥</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="table-area">
+      <div id="opponents-row">
+        <div class="opponent" id="opponent-0">
+          <div class="opponent-header">
+            <span class="opponent-name" id="opp0-name">Computer 1</span>
+            <span class="knock-tag hidden" id="opp0-knock-tag">✊ Klopft</span>
+            <span class="opponent-lives" id="opp0-lives">♥♥♥</span>
+            <div class="speech-bubble hidden" id="opp0-bubble"></div>
+          </div>
+          <div class="opponent-hand-wrap">
+            <div class="opponent-hand" id="opp0-hand"></div>
+          </div>
+        </div>
+        <div class="opponent" id="opponent-1">
+          <div class="opponent-header">
+            <span class="opponent-name" id="opp1-name">Computer 2</span>
+            <span class="knock-tag hidden" id="opp1-knock-tag">✊ Klopft</span>
+            <span class="opponent-lives" id="opp1-lives">♥♥♥</span>
+            <div class="speech-bubble hidden" id="opp1-bubble"></div>
+          </div>
+          <div class="opponent-hand-wrap">
+            <div class="opponent-hand" id="opp1-hand"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="center-area">
+        <div id="status-text">Du bist dran</div>
+        <div id="table-cards"></div>
+        <div id="event-log"></div>
+      </div>
+
+      <div id="player-area">
+        <div class="player-name-row">
+          <span>Du</span>
+          <span class="knock-tag hidden" id="player-knock-tag">✊ Klopft</span>
+          <div class="speech-bubble hidden" id="player-bubble"></div>
+        </div>
+        <div class="player-hand" id="player-hand"></div>
+      </div>
+
+      <div id="showdown-panel" class="hidden">
+        <h2 id="showdown-title">Runde beendet</h2>
+        <div id="showdown-results"></div>
+        <button id="next-round-btn" class="action-btn primary">Nächste Runde</button>
+      </div>
+    </main>
+
+    <footer id="game-footer">
+      <div id="footer-actions">
+        <button id="swap-all-btn" class="action-btn">Alle tauschen</button>
+        <button id="schieben-btn" class="action-btn">Schieben</button>
+        <button id="knock-btn" class="action-btn primary">Klopfen</button>
+      </div>
+      <button id="new-game-btn" class="action-btn">
+        <span class="icon">↻</span>Neues Spiel
+      </button>
+    </footer>
+  </div>
+
+  <div id="gameover-overlay" class="hidden">
+    <div id="gameover-box">
+      <h2 id="gameover-title">Spiel vorbei</h2>
+      <p id="gameover-text"></p>
+      <div id="gameover-actions">
+        <button id="gameover-restart-btn" class="action-btn primary">Neues Spiel</button>
+        <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

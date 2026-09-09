@@ -1,0 +1,887 @@
+:root {
+  --felt-1: #0f6b3f;
+  --felt-2: #0a4a2c;
+  --felt-3: #083b23;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --accent: #f2c94c;
+  --ink: #eef3ef;
+  --ink-dim: #b7c7bd;
+  --grid-line: rgba(8, 26, 16, 0.35);
+  /* Beide Spielmodi teilen sich denselben Goldton; unterschieden werden sie
+     über die Sternsymbole und die Überschriften, nicht über die Farbe. */
+  --accent-1: #f2c94c;
+  --accent-2: #f2c94c;
+  --mode-accent: var(--accent-1);
+  --region-line: #08210f;
+  --cell: 44px;
+  /* Konturstärke des Sterns – wächst mit der Zellgröße mit. */
+  --outline: 1.5px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+    radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+.corner-home {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  /* Feste Höhe statt Innenabstand: So sitzt die Schrift zuverlässig mittig,
+     unabhängig davon, wie hoch die Zeilenbox der jeweiligen Zeichen ausfällt. */
+  height: 34px;
+  padding: 0 15px 0 7px;
+  border-radius: 999px;
+  background: rgba(8, 26, 17, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.corner-home-pfeil {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: rgba(242, 201, 76, 0.16);
+  color: var(--accent);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.corner-home-text { line-height: 1; }
+
+.corner-home:hover {
+  color: var(--ink);
+  border-color: rgba(242, 201, 76, 0.5);
+  background: rgba(16, 42, 27, 0.92);
+  transform: translateY(-1px);
+}
+
+.corner-home:hover .corner-home-pfeil {
+  background: var(--accent);
+  color: #08160e;
+  transform: translateX(-2px);
+}
+
+/* Der Spieltitel führt zurück auf die Übersicht dieses Spiels. */
+#game-title {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 2;
+  justify-self: center;
+  transition: background 140ms ease;
+}
+
+#game-title:hover { background: rgba(255,255,255,0.07); }
+#game-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.brand-star {
+  color: var(--mode-accent);
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* ------------------------------------------------------------------
+   Startbildschirm
+   ------------------------------------------------------------------ */
+
+#start-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.start-card {
+  width: 100%;
+  max-width: 940px;
+  text-align: center;
+  background: rgba(6, 22, 14, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 36px 32px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  margin: auto;
+}
+
+.start-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.start-brand .brand-star { font-size: 2.2rem; }
+
+.start-brand h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+.start-sub {
+  color: var(--ink-dim);
+  margin: 10px 0 26px;
+  font-size: 0.95rem;
+}
+
+.continue-btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: rgba(242, 201, 76, 0.14);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.continue-btn:hover { background: rgba(242, 201, 76, 0.24); transform: translateY(-1px); }
+.continue-btn-title { display: block; font-weight: 700; }
+.continue-btn-sub { display: block; font-size: 0.8rem; color: var(--ink-dim); margin-top: 3px; }
+
+.start-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.start-btn {
+  padding: 18px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease, transform 120ms ease, border-color 140ms ease;
+}
+
+.start-btn:hover {
+  background: var(--accent);
+  color: #241a04;
+  border-color: transparent;
+  transform: translateY(-2px);
+}
+
+.start-btn-title { display: block; font-weight: 700; font-size: 1rem; }
+.start-btn-sub { display: block; font-size: 0.76rem; color: var(--ink-dim); margin-top: 4px; }
+.start-btn:hover .start-btn-sub { color: #4a3a10; }
+
+
+
+
+.group-1 { --mode-accent: var(--accent-1); }
+.group-2 { --mode-accent: var(--accent-2); }
+
+/* Beide Modi nebeneinander, damit der Startbildschirm ohne Scrollen auskommt.
+   Unter etwa 700px Breite bricht das Raster von selbst auf eine Spalte um. */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.mode-group {
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--mode-accent);
+  background: rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+
+.mode-group-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.mode-group-stars {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--mode-accent);
+  letter-spacing: -0.06em;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.mode-group-text h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.mode-group-text p {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+.mode-group .continue-btn {
+  border-color: var(--mode-accent);
+  background: color-mix(in srgb, var(--mode-accent) 14%, transparent);
+}
+
+.mode-group .continue-btn:hover {
+  background: color-mix(in srgb, var(--mode-accent) 26%, transparent);
+}
+
+.mode-group .start-btn:hover {
+  background: var(--mode-accent);
+  color: #14210f;
+}
+
+.mode-group .start-btn:hover .start-btn-sub,
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 16px;
+}
+
+.stats-table th, .stats-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--panel-border);
+  text-align: center;
+}
+
+.stats-table thead th {
+  color: var(--ink-dim);
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.stats-table tbody th {
+  text-align: left;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+
+
+
+#start-notice {
+  margin: 10px 0 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(242, 201, 76, 0.14);
+  border: 1px solid rgba(242, 201, 76, 0.4);
+  font-size: 0.82rem;
+}
+
+#rules {
+  margin-top: 22px;
+  text-align: left;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.18);
+}
+
+#rules summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+#rules summary::before { content: "▸ "; color: var(--accent); }
+#rules[open] summary::before { content: "▾ "; }
+
+#rules ul {
+  margin: 12px 0 4px;
+  padding-left: 20px;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+#stats-reset {
+  margin-top: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+#stats-reset:hover { background: rgba(255,255,255,0.08); color: var(--ink); }
+
+/* ------------------------------------------------------------------
+   Spielbildschirm
+   ------------------------------------------------------------------ */
+
+#game-screen.mode-1 { --mode-accent: var(--accent-1); }
+#game-screen.mode-2 { --mode-accent: var(--accent-2); }
+
+#game-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 22px;
+  display: grid;
+  /* Seitenspalten mindestens so breit wie der Zurück-Knopf, damit der
+     Titel mittig steht und trotzdem nie darunter rutscht. */
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 16px;
+  border-bottom: 2px solid var(--mode-accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+#game-title .brand-star { font-size: 1.4rem; letter-spacing: -0.06em; }
+
+#topbar h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#stats { display: flex; gap: 10px; flex-wrap: wrap;
+  grid-column: 3;
+  justify-self: end;
+}
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--panel-border);
+  min-width: 74px;
+}
+
+.stat-label {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-dim);
+}
+
+.stat-value { font-size: 0.98rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+#board-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 0;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--cell));
+  grid-auto-rows: var(--cell);
+  background: var(--region-line);
+  border: 3px solid var(--region-line);
+  border-radius: 6px;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--grid-line);
+  transition: filter 120ms ease;
+}
+
+/* Regionsgrenzen kräftig nachzeichnen. Echte Borders statt kombinierter
+   Schatten, damit auch Zellen mit drei oder vier Randseiten stimmen. */
+.cell.edge-top { border-top: 2px solid var(--region-line); }
+.cell.edge-bottom { border-bottom: 2px solid var(--region-line); }
+.cell.edge-left { border-left: 2px solid var(--region-line); }
+.cell.edge-right { border-right: 2px solid var(--region-line); }
+
+.cell:hover { filter: brightness(1.14); }
+
+.mark {
+  position: relative;
+  z-index: 1;
+  font-size: calc(var(--cell) * 0.62);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+  /* Die Glyphen sitzen in ihrer Zeilenbox etwas zu tief – eine Eigenheit der
+     Schrift, nicht des Layouts. Stern und Kreuz brauchen dabei unterschiedlich
+     viel Ausgleich, weil ihre Tintenhöhen sich unterscheiden. */
+  transform: translateY(-0.04em);
+}
+
+/* Etwas größer als die Kreuze und mit einem leichten dunklen Rand – mehr
+   braucht es nicht, damit der Stern sich vom Pastellfeld abhebt. */
+.cell.is-star .mark {
+  font-size: calc(var(--cell) * 0.7);
+  transform: translateY(-0.07em);
+  color: #d99b12;
+  text-shadow:
+    var(--outline) 0 0 rgba(58, 35, 0, 0.7),
+    calc(var(--outline) * -1) 0 0 rgba(58, 35, 0, 0.7),
+    0 var(--outline) 0 rgba(58, 35, 0, 0.7),
+    0 calc(var(--outline) * -1) 0 rgba(58, 35, 0, 0.7);
+}
+
+.cell.is-dot .mark { color: rgba(22, 40, 30, 0.55); font-size: calc(var(--cell) * 0.42); }
+
+.cell.is-error::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border: 2px solid #ff6b6b;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.cell.is-hint::after,
+.cell.is-wrong::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 4px;
+  pointer-events: none;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.cell.is-hint::after {
+  border: 3px solid #7ef0c0;
+  box-shadow: 0 0 12px 2px rgba(126, 240, 192, 0.8), inset 0 0 10px rgba(126, 240, 192, 0.45);
+}
+
+.cell.is-wrong::after {
+  border: 3px solid #ff6b6b;
+  box-shadow: 0 0 12px 2px rgba(255, 107, 107, 0.8), inset 0 0 10px rgba(255, 107, 107, 0.45);
+}
+
+/* Nie ganz ausblenden – der Hinweis soll jederzeit erkennbar bleiben. */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+#hint-text {
+  margin: 0 auto 4px;
+  max-width: 640px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(6, 22, 14, 0.8);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------
+   Fußzeile
+   ------------------------------------------------------------------ */
+
+#game-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 22px;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--panel-border);
+}
+
+#footer-tools, #footer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease, border-color 140ms ease;
+}
+
+.action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+
+.action-btn.primary {
+  background: var(--mode-accent);
+  color: #14210f;
+  border-color: transparent;
+}
+
+.action-btn.primary:hover { filter: brightness(1.12); }
+.action-btn .icon { font-size: 0.95rem; }
+
+/* ------------------------------------------------------------------
+   Optionen
+   ------------------------------------------------------------------ */
+
+#settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(3, 12, 7, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.settings-box {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(9, 32, 20, 0.97);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 26px 28px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+.settings-box h2 { margin: 0 0 18px; font-size: 1.1rem; }
+
+.setting-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--panel-border);
+  cursor: pointer;
+}
+
+.setting-row input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+.setting-row strong { display: block; font-size: 0.9rem; font-weight: 600; }
+.setting-row em { display: block; font-style: normal; font-size: 0.78rem; color: var(--ink-dim); margin-top: 3px; }
+
+#settings-close { margin-top: 20px; width: 100%; justify-content: center; }
+
+/* ------------------------------------------------------------------
+   Ladeanzeige
+   ------------------------------------------------------------------ */
+
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(3, 12, 7, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-box { text-align: center; }
+
+.loading-star {
+  display: block;
+  font-size: 3.4rem;
+  color: var(--accent);
+  animation: spin 1.4s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.18); }
+  to { transform: rotate(360deg) scale(1); }
+}
+
+#loading-text { color: var(--ink-dim); font-size: 0.92rem; margin-top: 14px; }
+
+/* ------------------------------------------------------------------
+   Gewonnen
+   ------------------------------------------------------------------ */
+
+#win-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(3, 12, 7, 0.76);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.confetti {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes fall {
+  from { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  to { transform: translateY(105vh) rotate(720deg); opacity: 0.15; }
+}
+
+#win-box {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  background: rgba(9, 32, 20, 0.97);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 34px 38px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  max-width: 560px;
+}
+
+#win-box h2 { margin: 0 0 10px; font-size: 1.5rem; }
+.win-stars { color: var(--accent); letter-spacing: 0.1em; }
+#win-text { color: var(--ink-dim); margin: 0 0 22px; font-size: 0.95rem; }
+
+.win-diff-label {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.win-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.win-group {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--mode-accent);
+  background: rgba(0,0,0,0.2);
+}
+
+.win-group-title {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--mode-accent);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+
+#win-back {
+  margin: 0 auto 22px;
+  display: inline-flex;
+}
+
+.win-diff-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.win-diff-btn {
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.win-diff-btn:hover { background: var(--mode-accent); color: #14210f; transform: translateY(-2px); }
+.win-diff-btn span { display: block; font-weight: 500; font-size: 0.72rem; color: var(--ink-dim); margin-top: 3px; }
+.win-diff-btn:hover span { color: #2c3a1c; }
+
+.hub-return-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.hub-return-link:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------------
+   Kleine Bildschirme
+   ------------------------------------------------------------------ */
+
+/* =====================================================================
+   Kleine Bildschirme
+
+   Das Brett selbst rechnet sich seine Zellgröße ohnehin aus dem freien
+   Platz aus (siehe fitBoard) – es geht hier nur darum, Kopf- und Fußzeile
+   so zu falten, dass sie nicht in die Breite laufen und dem Brett trotzdem
+   Höhe lassen.
+
+   Die zweite Bedingung ist das Querformat: Ein Telefon ist dann breiter als
+   720 Pixel, aber keine 430 hoch.
+   ===================================================================== */
+@media (max-width: 720px), (max-height: 520px) {
+  /* Nur der Pfeil: Der Schriftzug kostet Platz, den die Kopfzeile braucht. */
+  .corner-home {
+    top: 8px;
+    left: 8px;
+    height: 30px;
+    padding: 0 5px;
+  }
+
+  .corner-home-text {
+    display: none;
+  }
+
+  #topbar h1 {
+    font-size: 1rem;
+  }
+
+  .stat-chip {
+    min-width: 0;
+    padding: 3px 8px;
+  }
+
+  #board-wrap {
+    padding: 8px;
+  }
+
+  #game-footer {
+    padding: 8px 10px;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  #footer-tools,
+  #footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .action-btn {
+    font-size: 0.74rem;
+    padding: 7px 10px;
+  }
+}
+
+/* Hochformat: Titel und Zahlen übereinander statt nebeneinander. */
+@media (max-width: 720px) {
+  #start-screen {
+    padding: 52px 14px 24px;
+  }
+
+  .start-card {
+    padding: 28px 20px;
+  }
+
+  /* Die Seitenspalten von je 180 Pixeln passen hier nicht mehr nebeneinander –
+     ohne diese Zeile schiebt allein die Kopfzeile die Seite in die Breite. */
+  #topbar {
+    grid-template-columns: 1fr;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  #game-title {
+    grid-column: 1;
+    justify-self: center;
+    justify-content: center;
+  }
+
+  #stats {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+
+/* Querformat: Breite ist da, Höhe nicht – Kopf und Fuß bleiben einzeilig. */
+@media (max-height: 520px) and (min-width: 721px) {
+  #topbar {
+    grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+    padding: 6px 16px;
+  }
+
+  #game-footer {
+    padding: 6px 16px;
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Corner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="hub.css">
+</head>
+<body>
+
+  <div id="hub">
+    <div class="hub-brand">
+      <span class="hub-icon">🎮</span>
+      <h1>Game Corner</h1>
+    </div>
+    <p class="hub-sub">Wähle ein Spiel</p>
+
+    <div class="tile-grid">
+      <a class="tile" href="games/spider/index.html">
+        <span class="tile-icon">♠</span>
+        <span class="tile-title">Spider Solitaire</span>
+      </a>
+      <a class="tile" href="games/schwimmen/index.html">
+        <span class="tile-icon">🃏</span>
+        <span class="tile-title">Schwimmen</span>
+      </a>
+      <a class="tile nur-rechner" href="games/minesweeper/index.html">
+        <span class="tile-icon">💣</span>
+        <span class="tile-title">Minesweeper</span>
+      </a>
+      <a class="tile nur-rechner" href="games/puzzle/index.html">
+        <span class="tile-icon">🧩</span>
+        <span class="tile-title">Puzzle</span>
+      </a>
+      <a class="tile" href="games/starstruck/index.html">
+        <span class="tile-icon">⭐</span>
+        <span class="tile-title">Starstruck</span>
+      </a>
+      <a class="tile" href="games/mahjong/index.html">
+        <span class="tile-icon">🀄</span>
+        <span class="tile-title">Mahjong</span>
+      </a>
+      <a class="tile" href="games/freecell/index.html">
+        <span class="tile-icon">♣</span>
+        <span class="tile-title">FreeCell</span>
+      </a>
+    </div>
+
+    <p class="rechner-hinweis">Minesweeper und Puzzle brauchen eine Maus – die gibt es am Rechner.</p>
+
+    <section id="hub-stats">
+      <h2>Statistiken</h2>
+      <table id="hub-stats-table">
+        <thead>
+          <tr>
+            <th>Spiel</th>
+            <th>Gespielt</th>
+            <th>Gewonnen</th>
+            <th>Quote</th>
+            <th>Bestzeit</th>
+          </tr>
+        </thead>
+        <tbody id="hub-stats-body"></tbody>
+      </table>
+      <p id="hub-stats-leer" class="hidden">Noch keine Partie gespielt.</p>
+      <button id="hub-stats-reset" type="button">Alle Statistiken zurücksetzen</button>
+    </section>
+  </div>
+
+  <script src="hub.js"></script>
+  <script src="pwa.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,1032 @@
+:root {
+  --felt-1: #0f6b3f;
+  --felt-2: #0a4a2c;
+  --felt-3: #083b23;
+  --panel-bg: rgba(10, 30, 20, 0.55);
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --accent: #f2c94c;
+  --ink: #eef3ef;
+  --ink-dim: #b7c7bd;
+  --radius: 9px;
+
+  /* Steingröße. game.js rechnet den Wert aus und setzt ihn hier; die Werte
+     hier sind nur der Startpunkt, bevor gemessen wurde. */
+  --stein-w: 46px;
+  --stein-h: 62px;
+  /* Wie weit eine Ebene gegen die darunter versetzt ist. Daraus entsteht der
+     Eindruck von Höhe – ohne Versatz sähe ein Turm aus wie ein Stein. */
+  --ebene-dx: 6px;
+  --ebene-dy: 6px;
+
+  /* Schrift für die chinesischen Zeichen. Nicht jede Schrift hat sie; ohne
+     diese Liste stehen auf halben Steinen leere Kästchen. */
+  --cjk: "Yu Gothic UI", "Microsoft YaHei", "PingFang SC",
+         "Hiragino Sans GB", "Noto Sans CJK SC", "Segoe UI", sans-serif;
+
+  --dur-weg: 320ms;
+  --ease-move: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+    radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+}
+
+.hidden { display: none !important; }
+
+.brand-glyph {
+  color: var(--accent);
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 6px rgba(242,201,76,0.4));
+}
+
+/* ---------- Zurück zur Sammlung ---------- */
+
+.corner-home {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 15px 0 7px;
+  border-radius: 999px;
+  background: rgba(8, 26, 17, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.corner-home-pfeil {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: rgba(242, 201, 76, 0.16);
+  color: var(--accent);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.corner-home-text { line-height: 1; }
+
+.corner-home:hover {
+  color: var(--ink);
+  border-color: rgba(242, 201, 76, 0.5);
+  background: rgba(16, 42, 27, 0.92);
+  transform: translateY(-1px);
+}
+
+.corner-home:hover .corner-home-pfeil {
+  background: var(--accent);
+  color: #08160e;
+  transform: translateX(-2px);
+}
+
+/* ---------- Startbildschirm ---------- */
+
+#start-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.start-card {
+  background: rgba(6, 22, 14, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 40px 46px;
+  text-align: center;
+  max-width: 640px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+}
+
+.start-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.start-brand h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.start-sub {
+  color: var(--ink-dim);
+  margin: 10px 0 26px;
+  font-size: 0.95rem;
+}
+
+.continue-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 22px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #241a04;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease, box-shadow 160ms ease;
+}
+
+.continue-btn:hover {
+  background: #ffd766;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(242,201,76,0.35);
+}
+
+.continue-btn-title { font-size: 1.05rem; font-weight: 700; }
+.continue-btn-sub { font-size: 0.78rem; color: #4a3a10; }
+
+.wahl-titel {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.variante-grid {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.variante-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, transform 140ms ease;
+}
+
+.variante-btn:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+
+.variante-btn.aktiv {
+  background: rgba(242,201,76,0.16);
+  border-color: rgba(242,201,76,0.6);
+}
+
+.variante-btn-title { font-size: 1.05rem; font-weight: 700; }
+.variante-btn-sub { font-size: 0.76rem; color: var(--ink-dim); line-height: 1.35; }
+.variante-btn.aktiv .variante-btn-title { color: var(--accent); }
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.layout-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 160ms ease, transform 140ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.layout-btn:hover {
+  background: var(--accent);
+  color: #241a04;
+  border-color: transparent;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(242,201,76,0.35);
+}
+
+.layout-btn-title { font-size: 0.95rem; font-weight: 700; }
+
+/* Kleine Vorschau des Aufbaus – gezeichnet aus denselben Daten wie das
+   Spielfeld, damit sie nicht irgendwann etwas anderes zeigt als das Spiel. */
+.layout-vorschau {
+  position: relative;
+  width: 84px;
+  height: 60px;
+}
+
+.layout-vorschau i {
+  position: absolute;
+  background: linear-gradient(150deg, #ffffff 0%, #f2f5f2 55%, #d5dcd7 100%);
+  border-radius: 1.5px;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.4), 0.5px 0.5px 0 0.5px rgba(0,0,0,0.25);
+}
+
+.layout-btn:hover .layout-vorschau i { background: #3a2c06; box-shadow: none; }
+
+.start-hinweis {
+  margin: 22px 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.start-hinweis strong { color: var(--ink); }
+
+#start-stats {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--panel-border);
+}
+
+#start-stats h2 {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stats-scope {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.stats-scope-btn {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: none;
+  color: var(--ink-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.stats-scope-btn:hover { color: var(--ink); }
+
+.stats-scope-btn.aktiv {
+  background: var(--accent);
+  border-color: transparent;
+  color: #241a04;
+  font-weight: 600;
+}
+
+#stats-table {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0 auto;
+}
+
+#stats-table th, #stats-table td { padding: 6px 16px; text-align: center; }
+
+#stats-table th {
+  color: var(--ink-dim);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+#stats-table td.stat-row-label {
+  text-align: left;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+#stats-table td { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+#stats-reset {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+}
+
+#stats-reset:hover { color: var(--ink); }
+
+/* ---------- Spielbildschirm ---------- */
+
+#game-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 22px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+#game-title {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 2;
+  justify-self: center;
+  transition: background 140ms ease;
+}
+
+#game-title:hover { background: rgba(255,255,255,0.07); }
+#game-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+#topbar h1 { margin: 0; font-size: 1.25rem; font-weight: 600; letter-spacing: 0.02em; }
+
+#stats { display: flex; gap: 10px; grid-column: 3; justify-self: end; }
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  min-width: 54px;
+}
+
+.stat-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  transition: transform 180ms ease;
+}
+
+.stat-value.bump { transform: scale(1.28); }
+
+/* ---------- Spielfeld ---------- */
+
+#board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 26px 14px 30px;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Mittig in der freien Fläche. Automatische Außenabstände statt
+   `justify-content: center`, weil ein hineingezoomtes Brett sonst oben
+   abgeschnitten würde, anstatt scrollbar zu bleiben. */
+#brett-huelle { margin-top: auto; }
+#vorrat-leiste { margin-bottom: auto; }
+
+/* Ohne Vorratsleiste fehlt der untere Abstand, und das Brett klebt am Fuß –
+   auf einem hochkant gehaltenen Telefon fällt das sofort auf. */
+#board.ohne-vorrat #brett-huelle { margin-bottom: auto; }
+
+#brett-huelle {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Die Steine liegen absolut in diesem Kasten; Größe rechnet game.js.
+
+   `isolation` hält die Stapelreihenfolge der Steine hier drinnen: Sie zählen
+   in Zehntausendern, damit obere Ebenen über unteren liegen, und würden sonst
+   über Kopf- und Fußzeile hinwegzeichnen, sobald das Brett größer ist als das
+   Fenster. */
+#brett {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ---------- Steine ---------- */
+
+/*
+   Ein Stein ist ein Quader, gezeichnet aus zwei Teilen: der Oberseite und
+   dem Körper, der um die Steindicke nach rechts unten darüber hinausragt.
+
+   Weil höhere Ebenen nach links oben verschoben werden, schaut man schräg
+   von links oben auf den Stapel. Von einem Quader sind dann genau zwei
+   Seitenwände zu sehen: die rechte und die untere. Oben und links liegt die
+   Oberseite deshalb bündig auf dem Körper – ein Rand auf allen vier Seiten
+   wäre ein Stein, den man von überall gleichzeitig sieht.
+
+   Die Steindicke ist derselbe Wert wie der Ebenenversatz (siehe game.js).
+   Damit deckt der Körper eines Steins genau die Oberseite dessen ab, auf dem
+   er liegt: Steine, die exakt übereinander liegen, ergeben einen Stapel mit
+   einer hohen Seitenwand statt eines Treppchens aus Splittern.
+*/
+
+.stein {
+  position: absolute;
+  /* Die Oberseite bleibt --stein-w mal --stein-h; das Kästchen ist um die
+     Dicke größer, weil Seitenwände und Schatten hineingehören. */
+  width: calc(var(--stein-w) + var(--ebene-dx));
+  height: calc(var(--stein-h) + var(--ebene-dy));
+  /* Ebene des Steins; game.js setzt sie je Stein. Der Startwert gilt für
+     Steine, die nicht auf dem Brett liegen – die im Vorratsfach. */
+  --z: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: default;
+  transition: transform 140ms var(--ease-move), filter 160ms ease,
+              opacity var(--dur-weg) ease;
+}
+
+/* Körper: die zwei sichtbaren Seitenwände, rechts und unten.
+
+   Ein Quader, schräg von links oben gesehen, hat keine rechteckige
+   Silhouette, sondern eine sechseckige: Oberseite und Grundfläche sind
+   gegeneinander verschoben, und ihre Umrisse verbinden sich an zwei Ecken
+   schräg. Oben rechts und unten links ist deshalb nichts – wer dort Wand
+   zeichnet, zeigt eine Seite, die von hier aus gar nicht zu sehen ist.
+
+   Der Umriss wird mit `clip-path` beschnitten. Weil ein beschnittenes
+   Element auch seinen Schlagschatten verliert, kommt der über `filter`:
+   Der folgt der zugeschnittenen Form. */
+.stein::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--stein-w) * 0.12);
+  /* Die Vorderwand – die Fläche, die nach unten zeigt. Sie ist der ganzen
+     Silhouette unterlegt; zu sehen ist von ihr nur der Streifen unter der
+     Oberseite, den Rest verdecken Oberseite und rechte Wand. */
+  background: linear-gradient(100deg, #dee5e0 0%, #d5ded8 60%, #cbd4ce 100%);
+  box-shadow: inset 0 0 0 1px rgba(30,48,40,0.36);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--ebene-dx)) 0,
+    100% var(--ebene-dy),
+    100% 100%,
+    var(--ebene-dx) 100%,
+    0 calc(100% - var(--ebene-dy)));
+  /* Zwei Schatten: ein enger, der den Stein von allem trennt, was hinter ihm
+     liegt, und ein gerichteter nach rechts unten, der mit der Ebene wächst –
+     ein Stein in der fünften Lage liegt vier Steindicken über dem Tisch und
+     wirft entsprechend weiter. */
+  filter:
+    drop-shadow(0 0 calc(var(--ebene-dy) * 0.3) rgba(18,36,28,0.55))
+    drop-shadow(calc(var(--ebene-dx) * (0.2 + 0.15 * var(--z)))
+                calc(var(--ebene-dy) * (0.35 + 0.3 * var(--z)))
+                calc(var(--ebene-dy) * (0.5 + 0.4 * var(--z))) rgba(0,0,0,0.4));
+}
+
+/* Rechte Seitenwand: eine eigene Fläche, dunkler als die Vorderwand, mit
+   scharfer Kante dazwischen.
+
+   Zwei Wände in einem gemeinsamen Verlauf zu zeichnen ergibt eine
+   abgerundete Fase, keinen Quader: Ein Quader zeigt ebene Flächen, die sich
+   an einer Kante treffen, und jede Fläche hat ihren eigenen Ton – daran
+   erkennt das Auge die Form. */
+.stein::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(170deg, #b8c2bb 0%, #adb8b1 70%, #a4afa8 100%);
+  clip-path: polygon(
+    calc(100% - var(--ebene-dx)) 0,
+    100% var(--ebene-dy),
+    100% 100%,
+    calc(100% - var(--ebene-dx)) calc(100% - var(--ebene-dy)));
+  pointer-events: none;
+}
+
+/* Oberseite: das helle Feld, auf dem das Motiv sitzt. */
+.stein-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--stein-w);
+  height: var(--stein-h);
+  border-radius: calc(var(--stein-w) * 0.12);
+  background: linear-gradient(158deg, #ffffff 0%, #fdfefd 42%, #f3f7f4 100%);
+  /* Die feine dunkle Linie ums Feld gehört zum Bild eines Mahjongsteins –
+     sie trennt die Oberseite vom Bein und die Steine voneinander. Der
+     Schlagschatten nach rechts unten setzt das Feld vom Körper ab; ohne ihn
+     liegt es in der Fläche und der Stein sieht bedruckt aus. */
+  box-shadow:
+    inset 0 0 0 1px rgba(36,58,48,0.42),
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 0 calc(var(--ebene-dy) * -0.25) calc(var(--ebene-dy) * 0.7) rgba(90,110,98,0.16),
+    1px 2px 3px rgba(24,40,30,0.34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+/* Glanz: Licht von links oben. Liegt über dem Motiv, deshalb sehr dünn – er
+   soll die Wölbung andeuten, nicht das Bild trüben. */
+.stein-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(148deg,
+    rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.3) 16%,
+    rgba(255,255,255,0) 38%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+/* Freie Steine liegen im Licht, verbaute bleiben zurück. Ohne diesen
+   Unterschied sucht man bei 144 Steinen ständig, was überhaupt geht –
+   abschalten lässt es sich trotzdem, wer mag, sucht selbst. */
+#brett.nur-frei .stein.verbaut {
+  filter: brightness(0.76) saturate(0.5) contrast(0.9);
+}
+
+.stein.frei { cursor: pointer; }
+
+.stein.frei:hover { transform: translate(-2px, -3px); }
+
+.stein.frei:hover .stein-face {
+  background: linear-gradient(158deg, #ffffff 0%, #ffffff 45%, #f9fcfa 100%);
+}
+
+.stein.frei:hover::before {
+  filter:
+    drop-shadow(0 calc(var(--ebene-dy) * (0.8 + 0.3 * var(--z)))
+                  calc(var(--ebene-dy) * (1 + 0.4 * var(--z))) rgba(0,0,0,0.5));
+}
+
+.stein.gewaehlt { transform: translate(-3px, -4px); }
+
+.stein.gewaehlt::before {
+  background: linear-gradient(135deg,
+    #fffcec 0%, #f9eec4 24%, #eddfa0 50%, #d6c47e 76%, #b8a55f 100%);
+}
+
+.stein.gewaehlt .stein-face {
+  background: linear-gradient(158deg, #fffef6 0%, #fdf6d8 55%, #f7ebb6 100%);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    1px 2px 3px rgba(24,40,30,0.36);
+}
+
+.stein.hinweis .stein-face { animation: hinweis-puls 1.05s ease-in-out infinite; }
+
+@keyframes hinweis-puls {
+  0%, 100% {
+    box-shadow: inset 0 0 0 2px rgba(242,201,76,0.4), 0 1px 2px rgba(74,62,36,0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px var(--accent), 0 0 9px 2px rgba(242,201,76,0.6);
+  }
+}
+
+/* Fehlgriff: kurz rot aufblitzen. */
+.stein.daneben .stein-face { animation: daneben-blitz 420ms ease; }
+
+@keyframes daneben-blitz {
+  0%, 100% { background: linear-gradient(158deg, #ffffff, #fdfefd 42%, #f3f7f4); }
+  40%      { background: linear-gradient(158deg, #ffdad4, #f6aca3); }
+}
+
+/* Weggeräumt: nach oben wegfliegen und ausblenden. */
+.stein.weg {
+  opacity: 0;
+  transform: translateY(-18px) scale(0.82);
+  pointer-events: none;
+}
+
+/* ---------- Motive ---------- */
+
+/*
+   Was auf der Oberseite steht, kommt aus motive.js: Zeichnungen für Kreise,
+   Bambus und Blumen, Schrift für die Zahlzeichen, Winde und Drachen. Die
+   Größen hängen an der Steinhöhe, damit auf einem kleinen Stein nichts
+   überläuft.
+*/
+
+.motiv {
+  width: 92%;
+  height: 92%;
+  display: block;
+}
+
+.motiv-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-family: var(--cjk);
+  font-weight: 700;
+}
+
+/* Zahlzeichen und Farbzeichen der 萬-Steine, übereinander wie auf echten
+   Steinen: die Zahl grün, das 萬 darunter rot. Zwei Farben auf einem Stein
+   sind schneller erkannt als eine. */
+.motiv-zahl { font-size: calc(var(--stein-h) * 0.4); }
+
+.motiv-suit {
+  font-size: calc(var(--stein-h) * 0.32);
+  margin-top: calc(var(--stein-h) * 0.03);
+  color: #c62828;
+}
+
+.motiv-glyph { font-size: calc(var(--stein-h) * 0.54); }
+.motiv-glyph.gross { font-size: calc(var(--stein-h) * 0.66); }
+
+/* Die Himmelsrichtung unter dem Wind. Vier ähnlich gebaute Zeichen sind der
+   häufigste Fehlgriff – ein Buchstabe klärt das sofort. */
+.motiv-mini {
+  margin-top: calc(var(--stein-h) * 0.02);
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  font-size: calc(var(--stein-h) * 0.16);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.65;
+}
+
+/* Eckzeichen der Blumen und Jahreszeiten: Sie passen nur innerhalb ihrer
+   Gruppe zusammen, und das sieht man an vier verschiedenen Bildern sonst
+   nicht. */
+.motiv-ecke {
+  position: absolute;
+  right: calc(var(--stein-w) * 0.05);
+  bottom: calc(var(--stein-w) * 0.04);
+  padding: 0 calc(var(--stein-w) * 0.05);
+  border-radius: 999px;
+  font-family: var(--cjk);
+  font-size: calc(var(--stein-h) * 0.17);
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+/* Farben der Steingruppen. Die Farbe erkennt man schneller als das Bild,
+   und beim Paarsuchen zählt genau das. Kräftig, wie auf echten Steinen:
+   auf weißem Grund darf nichts blass sein. */
+.stein.bambus        { color: #0e8a3c; }
+.stein.muenze        { color: #12579b; }
+/* Bei den Zeichensteinen gilt die Gruppenfarbe für die Zahl; das 萬 darunter
+   ist rot (siehe .motiv-suit). */
+.stein.zeichen       { color: #0e8a3c; }
+.stein.wind          { color: #12579b; }
+.stein.drache-rot    { color: #cc2a1c; }
+.stein.drache-gruen  { color: #0e8a3c; }
+.stein.drache-weiss  { color: #12579b; }
+.stein.blume         { color: #c72f8f; }
+.stein.jahreszeit    { color: #b0740c; }
+
+/* Die vier Blumen sind gezeichnet, da wäre eine gemeinsame Farbe seltsam:
+   ein magentafarbener Bambus sieht falsch aus. Zusammengehalten werden sie
+   vom Eckzeichen. */
+.stein[data-art="blume-pflaume"]       { color: #d6338c; }
+.stein[data-art="blume-orchidee"]      { color: #7b3fc4; }
+.stein[data-art="blume-chrysantheme"]  { color: #e07a12; }
+.stein[data-art="blume-bambus"]        { color: #2f8f3a; }
+
+.stein.blume .motiv-ecke {
+  background: rgba(199,47,143,0.14);
+  color: #a8237a;
+}
+
+.stein.jahreszeit .motiv-ecke {
+  background: rgba(176,116,12,0.16);
+  color: #8a5c0d;
+}
+
+/* ---------- Vorrat ---------- */
+
+#vorrat-leiste {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.26);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+}
+
+.vorrat-titel {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+#vorrat-plaetze { display: flex; gap: 10px; }
+
+.vorrat-platz {
+  position: relative;
+  /* So groß wie ein Stein samt Dicke, damit er das Fach genau füllt. */
+  width: calc(var(--stein-w) + var(--ebene-dx));
+  height: calc(var(--stein-h) + var(--ebene-dy));
+  border-radius: calc(var(--stein-w) * 0.12);
+  border: 1px dashed rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.05);
+}
+
+/* Der letzte freie Platz mahnt: Danach ist Schluss. */
+.vorrat-platz.letzter {
+  border-color: rgba(242,201,76,0.75);
+  box-shadow: 0 0 0 2px rgba(242,201,76,0.2);
+}
+
+/* Im Fach liegt der Stein ruhig: derselbe Körper, aber ohne den langen
+   Schatten, den ein Stein auf dem Tisch wirft. */
+.vorrat-platz .stein {
+  position: absolute;
+  left: 0;
+  top: 0;
+  cursor: default;
+}
+
+.vorrat-platz .stein::before {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.3),
+    0 2px 5px rgba(0,0,0,0.4);
+}
+
+/* ---------- Fußleiste ---------- */
+
+#game-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  margin-top: auto;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  border-top: 1px solid var(--panel-border);
+  box-shadow: 0 -6px 18px rgba(0,0,0,0.25);
+}
+
+#size-controls {
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+#size-controls .action-btn {
+  border: none;
+  border-radius: 999px;
+  min-width: 38px;
+  justify-content: center;
+  padding: 7px 12px;
+}
+
+#footer-tools, #footer-actions { display: flex; align-items: center; gap: 10px; }
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, transform 100ms ease, box-shadow 140ms ease;
+}
+
+.action-btn .icon { font-size: 1rem; line-height: 1; }
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.13);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+.action-btn:active:not(:disabled) { transform: translateY(0); }
+.action-btn:disabled { opacity: 0.4; cursor: default; }
+
+.action-btn.primary {
+  background: var(--accent);
+  color: #241a04;
+  border-color: transparent;
+}
+
+.action-btn.primary:hover { background: #ffd766; }
+
+/* Ein Knopf, der einen Zustand hält – zu sehen ist, was gerade gilt. */
+.action-btn[aria-pressed="true"] {
+  background: rgba(242,201,76,0.18);
+  border-color: rgba(242,201,76,0.55);
+  color: #f8e0a0;
+}
+
+.action-btn.result-ok {
+  background: rgba(63,174,106,0.22);
+  border-color: rgba(63,174,106,0.55);
+  color: #a4e8bd;
+}
+
+.action-btn.result-bad {
+  background: rgba(209,69,59,0.22);
+  border-color: rgba(209,69,59,0.55);
+  color: #f3b3ac;
+}
+
+/* ---------- Ende ---------- */
+
+#end-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 14, 9, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+#confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(540deg); opacity: 0.9; }
+}
+
+#end-box {
+  position: relative;
+  background: linear-gradient(165deg, rgba(20,50,34,0.95), rgba(9,28,18,0.95));
+  border: 1px solid var(--panel-border);
+  padding: 34px 46px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  animation: end-in 420ms var(--ease-move);
+}
+
+#end-overlay.ist-verloren #end-box {
+  background: linear-gradient(165deg, rgba(58,26,22,0.95), rgba(28,12,10,0.95));
+}
+
+@keyframes end-in {
+  0% { transform: scale(0.85) translateY(14px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+#end-box h2 { margin: 0 0 6px; font-size: 1.6rem; }
+#end-box p { color: var(--ink-dim); margin: 10px 0 20px; }
+
+.end-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hub-return-link {
+  display: inline-block;
+  margin-top: 22px;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.hub-return-link:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+/* =====================================================================
+   Handy
+
+   Auf 375 Pixel müssen bis zu fünfzehn Steine nebeneinander passen. Wie groß
+   sie dann sein können, rechnet game.js; hier wird nur der Platz freigeräumt
+   und alles Beiwerk kleiner gemacht.
+
+   Die zweite Bedingung ist das Querformat: Ein Telefon ist dann breiter als
+   720 Pixel, aber keine 520 hoch.
+   ===================================================================== */
+@media (max-width: 720px), (max-height: 520px) {
+  /* Nur der Pfeil: Der Schriftzug kostet Platz, den die Kopfzeile braucht. */
+  .corner-home { top: 8px; left: 8px; height: 30px; padding: 0 5px; }
+  .corner-home-text { display: none; }
+
+  #topbar { padding: 8px 10px 8px 48px; gap: 6px; grid-template-columns: 1fr; }
+  #game-title { grid-column: 1; justify-self: start; padding: 2px 8px; gap: 7px; }
+  #topbar h1 { font-size: 1rem; }
+
+  /* Eine Zeile, die notfalls schiebt: "Vorrat · Schildkröte" wird lang. */
+  #stats {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: center;
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #stats::-webkit-scrollbar { display: none; }
+  .stat-chip { padding: 2px 7px; min-width: 0; flex: none; }
+  /* Fünf Felder passen auf 375 Pixel nicht. Die Zahl der Paare steckt
+     ohnehin in "Übrig" – also weg damit, bevor die Zeile abschneidet. */
+  .stat-chip[data-chip="paare"] { display: none; }
+  .stat-label { font-size: 0.54rem; }
+  .stat-value { font-size: 0.85rem; }
+
+  #board { padding: 10px 6px 14px; gap: 10px; }
+
+  #game-footer { padding: 8px 8px; gap: 8px; justify-content: center; }
+  .action-btn { padding: 7px 10px; font-size: 0.78rem; }
+  .action-btn .icon { font-size: 0.9rem; }
+
+  #vorrat-leiste { padding: 7px 12px; gap: 10px; }
+  .vorrat-titel { display: none; }
+
+  .start-card { padding: 26px 18px; }
+  .variante-grid { flex-direction: column; }
+  .layout-grid { grid-template-columns: repeat(2, 1fr); }
+  #stats-table th, #stats-table td { padding: 5px 8px; }
+}

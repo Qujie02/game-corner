@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeCell · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-suit">♣</span>
+        <h1>FreeCell</h1>
+      </div>
+      <p class="start-sub">Wähle einen Schwierigkeitsgrad, um zu starten</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <div class="start-options">
+        <button class="start-btn" data-grad="leicht">
+          <span class="start-btn-title">Leicht</span>
+          <span class="start-btn-sub">4 freie Zellen</span>
+        </button>
+        <button class="start-btn" data-grad="mittel">
+          <span class="start-btn-title">Mittel</span>
+          <span class="start-btn-sub">3 freie Zellen</span>
+        </button>
+        <button class="start-btn" data-grad="schwer">
+          <span class="start-btn-title">Schwer</span>
+          <span class="start-btn-sub">2 freie Zellen</span>
+        </button>
+      </div>
+
+      <p class="start-hinweis">
+        Alle Karten liegen offen, es wird nichts nachgezogen – FreeCell ist reines Nachdenken.
+        Jedes Blatt wird vor dem Austeilen durchgerechnet und nur genommen, wenn es
+        <strong>aufgeht</strong>. Verspielen kann man sich trotzdem; dafür gibt es Rückgängig.
+      </p>
+
+      <div id="start-stats">
+        <h2>Statistiken</h2>
+        <table id="stats-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Leicht</th>
+              <th>Mittel</th>
+              <th>Schwer</th>
+            </tr>
+          </thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-suit">♣</span>
+        <h1>FreeCell</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Modus</span>
+          <span class="stat-value" id="grad-label">Leicht</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Züge</span>
+          <span class="stat-value" id="zug-count">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Fertig</span>
+          <span class="stat-value"><span id="basis-count">0</span>/52</span>
+        </div>
+        <div class="stat-chip" data-chip="frei">
+          <span class="stat-label">Frei</span>
+          <span class="stat-value" id="frei-count">4</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Alle Karten liegen in diesem einen Kasten und werden per `transform`
+         an ihren Platz geschoben – nur so können sie von Spalte zu Spalte
+         fliegen, statt zu springen. Zellen, Ablagen und Spalten sind
+         Hinterlegungen darin, keine Behälter. -->
+    <main id="board">
+      <div id="feld"></div>
+    </main>
+
+    <footer id="game-footer">
+      <div id="size-controls">
+        <button id="size-down" class="action-btn" title="Karten verkleinern">−</button>
+        <button id="size-reset" class="action-btn" title="Kartengröße an das Fenster anpassen">Passend</button>
+        <button id="size-up" class="action-btn" title="Karten vergrößern">+</button>
+      </div>
+      <div id="footer-tools">
+        <button id="hint-btn" class="action-btn" title="Zeigt einen Zug, der weiterhilft">
+          <span class="icon">💡</span>Hinweis
+        </button>
+      </div>
+      <div id="footer-actions">
+        <button id="new-game-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="undo-btn" class="action-btn">
+          <span class="icon">↺</span>Rückgängig
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2 id="end-title">Geschafft! <span class="win-suits">♠ ♥ ♦ ♣</span></h2>
+      <p id="end-text"></p>
+      <p class="end-label" id="end-label">Nächste Runde:</p>
+      <div class="end-grad-row">
+        <button class="end-grad-btn" data-grad="leicht">Leicht<span>4 Zellen</span></button>
+        <button class="end-grad-btn" data-grad="mittel">Mittel<span>3 Zellen</span></button>
+        <button class="end-grad-btn" data-grad="schwer">Schwer<span>2 Zellen</span></button>
+      </div>
+      <div class="end-actions">
+        <button id="end-undo-btn" type="button" class="action-btn hidden">
+          <span class="icon">↺</span>Zug zurücknehmen
+        </button>
+        <button id="end-start-btn" type="button" class="action-btn">Zur Auswahl</button>
+      </div>
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <div id="deal-hinweis" class="hidden">Blatt wird durchgerechnet …</div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

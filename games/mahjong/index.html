@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahjong · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-glyph">🀄</span>
+        <h1>Mahjong</h1>
+      </div>
+      <p class="start-sub">Wähle Variante und Aufbau, um zu starten</p>
+
+      <button id="continue-btn" class="continue-btn hidden">
+        <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+        <span class="continue-btn-sub" id="continue-meta"></span>
+      </button>
+
+      <h2 class="wahl-titel">Variante</h2>
+      <div class="variante-grid">
+        <button class="variante-btn aktiv" data-variante="klassisch">
+          <span class="variante-btn-title">Klassisch</span>
+          <span class="variante-btn-sub">Zwei freie Steine anklicken, die zusammenpassen</span>
+        </button>
+        <button class="variante-btn" data-variante="vorrat">
+          <span class="variante-btn-title">Vorrat</span>
+          <span class="variante-btn-sub">Vier Plätze zum Zwischenlegen – passende Steine gehen von dort weg</span>
+        </button>
+      </div>
+
+      <h2 class="wahl-titel">Aufbau</h2>
+      <div class="layout-grid" id="layout-grid"></div>
+
+      <p class="start-hinweis">
+        Jedes Spiel ist so gebaut, dass es aufgeht – verspielen kann man sich trotzdem.
+        Dafür gibt es <strong>Neu mischen</strong>.
+      </p>
+
+      <div id="start-stats">
+        <h2>Statistiken</h2>
+        <div class="stats-scope">
+          <button type="button" class="stats-scope-btn aktiv" data-scope="klassisch">Klassisch</button>
+          <button type="button" class="stats-scope-btn" data-scope="vorrat">Vorrat</button>
+        </div>
+        <table id="stats-table">
+          <thead>
+            <tr id="stats-head-row"><th></th></tr>
+          </thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-glyph">🀄</span>
+        <h1>Mahjong</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Modus</span>
+          <span class="stat-value" id="modus-label">Klassisch</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Übrig</span>
+          <span class="stat-value" id="uebrig-count">144</span>
+        </div>
+        <div class="stat-chip" data-chip="paare">
+          <span class="stat-label">Paare</span>
+          <span class="stat-value" id="paar-count">0</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Mischen</span>
+          <span class="stat-value" id="misch-count">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="board">
+      <div id="brett-huelle">
+        <div id="brett"></div>
+      </div>
+      <div id="vorrat-leiste" class="hidden">
+        <span class="vorrat-titel">Vorrat</span>
+        <div id="vorrat-plaetze"></div>
+      </div>
+    </main>
+
+    <footer id="game-footer">
+      <div id="size-controls">
+        <button id="size-down" class="action-btn" title="Steine verkleinern">−</button>
+        <button id="size-reset" class="action-btn" title="Steingröße an das Fenster anpassen">Passend</button>
+        <button id="size-up" class="action-btn" title="Steine vergrößern">+</button>
+      </div>
+      <div id="footer-tools">
+        <button id="markier-btn" class="action-btn" aria-pressed="true"
+                title="Freie Steine hervorheben oder alle Steine gleich hell zeigen">
+          <span class="icon">👁️</span><span id="markier-text">Nur freie</span>
+        </button>
+        <button id="hint-btn" class="action-btn" title="Zeigt zwei Steine, die zusammenpassen und frei liegen">
+          <span class="icon">💡</span>Hinweis
+        </button>
+        <button id="misch-btn" class="action-btn" title="Verteilt die liegenden Steine neu – wieder so, dass es aufgeht">
+          <span class="icon">🔀</span>Neu mischen
+        </button>
+      </div>
+      <div id="footer-actions">
+        <button id="new-game-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="undo-btn" class="action-btn">
+          <span class="icon">↺</span>Rückgängig
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2 id="end-title">Geschafft!</h2>
+      <p id="end-text"></p>
+      <div class="end-actions">
+        <button id="end-again-btn" type="button" class="action-btn primary">
+          <span class="icon">↻</span>Noch eins
+        </button>
+        <button id="end-undo-btn" type="button" class="action-btn hidden">
+          <span class="icon">↺</span>Zug zurücknehmen
+        </button>
+        <button id="end-misch-btn" type="button" class="action-btn hidden">
+          <span class="icon">🔀</span>Neu mischen
+        </button>
+        <button id="end-start-btn" type="button" class="action-btn">Zur Auswahl</button>
+      </div>
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="motive.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

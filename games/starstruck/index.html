@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starstruck · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-star">★</span>
+        <h1>Starstruck</h1>
+      </div>
+      <p class="start-sub">Wähle einen Spielmodus und einen Schwierigkeitsgrad</p>
+
+      <div class="mode-grid">
+
+      <section class="mode-group group-1" data-stars="1">
+        <header class="mode-group-head">
+          <span class="mode-group-stars">★</span>
+          <div class="mode-group-text">
+            <h2>Ein Stern</h2>
+            <p>Ein Stern in jeder Zeile, Spalte und jedem Farbfeld</p>
+          </div>
+        </header>
+
+        <button class="continue-btn hidden" data-stars="1">
+          <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+          <span class="continue-btn-sub"></span>
+        </button>
+
+        <div class="start-options">
+          <button class="start-btn" data-mode="m1">
+            <span class="start-btn-title">Mittel</span>
+            <span class="start-btn-sub">8×8</span>
+          </button>
+          <button class="start-btn" data-mode="h1">
+            <span class="start-btn-title">Schwer</span>
+            <span class="start-btn-sub">9×9</span>
+          </button>
+        </div>
+
+        <table class="stats-table" data-stars="1">
+          <thead>
+            <tr><th></th><th>Mittel</th><th>Schwer</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="mode-group group-2" data-stars="2">
+        <header class="mode-group-head">
+          <span class="mode-group-stars">★★</span>
+          <div class="mode-group-text">
+            <h2>Zwei Sterne</h2>
+            <p>Zwei Sterne in jeder Zeile, Spalte und jedem Farbfeld</p>
+          </div>
+        </header>
+
+        <button class="continue-btn hidden" data-stars="2">
+          <span class="continue-btn-title">▶ Spiel fortsetzen</span>
+          <span class="continue-btn-sub"></span>
+        </button>
+
+        <div class="start-options">
+          <button class="start-btn" data-mode="m2">
+            <span class="start-btn-title">Mittel</span>
+            <span class="start-btn-sub">10×10</span>
+          </button>
+          <button class="start-btn" data-mode="h2">
+            <span class="start-btn-title">Schwer</span>
+            <span class="start-btn-sub">10×10 · mehr Vorausdenken</span>
+          </button>
+        </div>
+
+        <table class="stats-table" data-stars="2">
+          <thead>
+            <tr><th></th><th>Mittel</th><th>Schwer</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      </div>
+
+      <p id="start-notice" class="hidden"></p>
+
+      <details id="rules">
+        <summary>Spielregeln</summary>
+        <ul>
+          <li>In jeder <strong>Zeile</strong>, jeder <strong>Spalte</strong> und jedem <strong>Farbfeld</strong> steht genau die angegebene Anzahl Sterne.</li>
+          <li>Zwei Sterne dürfen sich <strong>nie berühren</strong> – auch nicht über Eck.</li>
+          <li>Ein Tipp auf ein Feld setzt ein <strong>Kreuz</strong>, der zweite einen <strong>Stern</strong>, der dritte macht es wieder leer.</li>
+          <li>Mit gedrückter Maustaste oder gewischtem Finger lassen sich mehrere Felder auf einmal markieren.</li>
+          <li>Jedes Rätsel hat genau eine Lösung und ist ohne Raten lösbar. <strong>Mittel</strong> und <strong>Schwer</strong> unterscheiden sich darin, wie weit man vorausdenken muss.</li>
+        </ul>
+      </details>
+
+      <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-star" id="title-stars">★</span>
+        <h1>Starstruck</h1>
+      </button>
+
+      <div id="stats">
+        <div class="stat-chip">
+          <span class="stat-label">Zeit</span>
+          <span class="stat-value" id="timer">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Modus</span>
+          <span class="stat-value" id="difficulty-label">Mittel</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">Sterne</span>
+          <span class="stat-value"><span id="star-count">0</span>/<span id="star-total">8</span></span>
+        </div>
+      </div>
+    </header>
+
+    <main id="board-wrap">
+      <div id="board" role="grid" aria-label="Starstruck-Spielfeld"></div>
+    </main>
+
+    <p id="hint-text" class="hidden"></p>
+
+    <footer id="game-footer">
+      <div id="footer-tools">
+        <button id="hint-btn" class="action-btn" title="Zeigt ein Feld, das sich logisch ableiten lässt">
+          <span class="icon">💡</span>Hinweis
+        </button>
+        <button id="check-btn" class="action-btn" title="Markiert falsch gesetzte Sterne">
+          <span class="icon">🔍</span>Prüfen
+        </button>
+        <button id="settings-btn" class="action-btn" title="Einstellungen">
+          <span class="icon">⚙</span>Optionen
+        </button>
+      </div>
+      <div id="footer-actions">
+        <button id="result-btn" class="action-btn primary hidden">
+          <span class="icon">🏆</span>Auswertung
+        </button>
+        <button id="new-game-btn" class="action-btn primary">
+          <span class="icon">↻</span>Neues Spiel
+        </button>
+        <button id="undo-btn" class="action-btn">
+          <span class="icon">↺</span>Rückgängig
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="settings-panel" class="hidden">
+    <div class="settings-box">
+      <h2>Optionen</h2>
+      <label class="setting-row">
+        <input type="checkbox" id="opt-autocross">
+        <span>
+          <strong>Kreuze automatisch setzen</strong>
+          <em>Rund um einen neuen Stern werden die Nachbarfelder abgehakt. Ist eine Zeile, Spalte oder ein Farbfeld voll, werden auch dort die restlichen Felder abgehakt.</em>
+        </span>
+      </label>
+      <label class="setting-row">
+        <input type="checkbox" id="opt-errors">
+        <span>
+          <strong>Fehler hervorheben</strong>
+          <em>Sterne, die sich berühren oder eine Einheit überfüllen, werden rot umrandet.</em>
+        </span>
+      </label>
+      <button id="settings-close" class="action-btn primary">Fertig</button>
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="loading-box">
+      <span class="loading-star">★</span>
+      <p id="loading-text">Rätsel wird erzeugt …</p>
+    </div>
+  </div>
+
+  <div id="win-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="win-box">
+      <h2>Geschafft! <span class="win-stars">★ ★ ★</span></h2>
+      <p id="win-text"></p>
+
+      <button id="win-back" class="action-btn">
+        <span class="icon">👁</span>Fertiges Brett ansehen
+      </button>
+
+      <p class="win-diff-label">Nächste Runde:</p>
+      <div class="win-groups">
+        <div class="win-group group-1">
+          <span class="win-group-title">★ Ein Stern</span>
+          <div class="win-diff-row">
+            <button class="win-diff-btn" data-mode="m1">Mittel<span>8×8</span></button>
+            <button class="win-diff-btn" data-mode="h1">Schwer<span>9×9</span></button>
+          </div>
+        </div>
+        <div class="win-group group-2">
+          <span class="win-group-title">★★ Zwei Sterne</span>
+          <div class="win-diff-row">
+            <button class="win-diff-btn" data-mode="m2">Mittel<span>10×10</span></button>
+            <button class="win-diff-btn" data-mode="h2">Schwer<span>10×10</span></button>
+          </div>
+        </div>
+      </div>
+
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

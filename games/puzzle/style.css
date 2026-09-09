@@ -1,0 +1,649 @@
+:root {
+  --felt-1: #0f6b3f;
+  --felt-2: #0a4a2c;
+  --felt-3: #083b23;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --accent: #f2c94c;
+  --ink: #eef3ef;
+  --ink-dim: #b7c7bd;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+    radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+.corner-home {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  /* Feste Höhe statt Innenabstand: So sitzt die Schrift zuverlässig mittig,
+     unabhängig davon, wie hoch die Zeilenbox der jeweiligen Zeichen ausfällt. */
+  height: 34px;
+  padding: 0 15px 0 7px;
+  border-radius: 999px;
+  background: rgba(8, 26, 17, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.corner-home-pfeil {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: rgba(242, 201, 76, 0.16);
+  color: var(--accent);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.corner-home-text { line-height: 1; }
+
+.corner-home:hover {
+  color: var(--ink);
+  border-color: rgba(242, 201, 76, 0.5);
+  background: rgba(16, 42, 27, 0.92);
+  transform: translateY(-1px);
+}
+
+.corner-home:hover .corner-home-pfeil {
+  background: var(--accent);
+  color: #08160e;
+  transform: translateX(-2px);
+}
+
+/* Der Spieltitel führt zurück auf die Übersicht dieses Spiels. */
+#game-title {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  grid-column: 2;
+  justify-self: center;
+  transition: background 140ms ease;
+}
+
+#game-title:hover { background: rgba(255,255,255,0.07); }
+#game-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.brand-mark { filter: drop-shadow(0 0 8px rgba(242,201,76,0.4)); }
+
+/* ------------------------------------------------------------------
+   Startbildschirm
+   ------------------------------------------------------------------ */
+
+#start-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.start-card {
+  width: 100%;
+  max-width: 860px;
+  text-align: center;
+  background: rgba(6, 22, 14, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 36px 32px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  margin: auto;
+}
+
+.start-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.start-brand .brand-mark { font-size: 2rem; }
+.start-brand h1 { margin: 0; font-size: 2rem; letter-spacing: 0.02em; }
+
+.start-sub { color: var(--ink-dim); margin: 10px 0 24px; font-size: 0.95rem; }
+
+.continue-btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: rgba(242, 201, 76, 0.14);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.continue-btn:hover { background: rgba(242, 201, 76, 0.24); transform: translateY(-1px); }
+.continue-btn-title { display: block; font-weight: 700; }
+.continue-btn-sub { display: block; font-size: 0.8rem; color: var(--ink-dim); margin-top: 3px; }
+
+/* Teilezahl als Reihe aus drei Schaltern */
+.groessen-reihe {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.groesse-btn {
+  flex: 1 1 0;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.05);
+  color: var(--ink-dim);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, border-color 130ms ease;
+}
+
+.groesse-btn:hover { border-color: var(--accent); color: var(--ink); }
+
+.groesse-btn.aktiv {
+  background: rgba(242, 201, 76, 0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Schnittart: drei Schalter mit kurzer Erklärung */
+.schnitt-reihe {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.schnitt-btn {
+  flex: 1 1 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.05);
+  color: var(--ink-dim);
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: background 130ms ease, color 130ms ease, border-color 130ms ease;
+}
+
+.schnitt-btn:hover { border-color: var(--accent); color: var(--ink); }
+
+.schnitt-btn.aktiv {
+  background: rgba(242, 201, 76, 0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.schnitt-name { display: block; font-weight: 600; font-size: 0.86rem; }
+.schnitt-sub { display: block; font-size: 0.7rem; opacity: 0.72; margin-top: 2px; line-height: 1.3; }
+
+/* Einstellung mit Kontrollkästchen */
+.einstellung {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+}
+
+.einstellung input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+.einstellung-text strong { display: block; font-size: 0.9rem; font-weight: 600; }
+.einstellung-text small { display: block; font-size: 0.76rem; color: var(--ink-dim); margin-top: 2px; }
+
+.motiv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.motiv-btn {
+  position: relative;
+  padding: 0 0 12px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  overflow: hidden;
+  transition: transform 130ms ease, border-color 130ms ease, background 130ms ease;
+}
+
+.motiv-btn:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  background: rgba(242, 201, 76, 0.12);
+}
+
+.motiv-btn img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: rgba(0,0,0,0.35);
+}
+
+.motiv-titel { display: block; font-weight: 700; font-size: 0.95rem; margin-top: 10px; }
+.motiv-meta { display: block; font-size: 0.74rem; color: var(--ink-dim); margin-top: 3px; }
+
+/* Fehlt die Bilddatei noch, bleibt die Kachel sichtbar erklärt. */
+.motiv-btn.fehlt img { opacity: 0.25; }
+.motiv-btn.fehlt::after {
+  content: "Bilddatei fehlt";
+  position: absolute;
+  top: 40%;
+  left: 0;
+  right: 0;
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Hintergrundfarbe: Vorschläge plus freie Wahl, in der Fußleiste */
+.farb-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0,0,0,0.28);
+}
+
+.farb-tupfer { display: flex; gap: 5px; }
+
+.farb-punkt {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.farb-punkt:hover { transform: scale(1.18); }
+.farb-punkt.aktiv { border-color: var(--ink); }
+
+.farb-frei { display: flex; align-items: center; cursor: pointer; }
+
+.farb-frei input {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+/* Motivkachel mit Löschkreuz */
+.motiv-kachel { position: relative; display: flex; }
+.motiv-kachel > .motiv-btn { flex: 1; }
+
+.motiv-loeschen {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: rgba(8, 22, 14, 0.82);
+  color: var(--ink-dim);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, transform 130ms ease;
+}
+
+.motiv-loeschen:hover {
+  background: #7d2a24;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Statistik auf der Startseite */
+#start-stats { margin-top: 22px; text-align: left; }
+
+#start-stats h2 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.stats-table th { text-align: left; font-weight: 500; color: var(--ink-dim); }
+.stats-table td { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-table tr:last-child th, .stats-table tr:last-child td { border-bottom: 0; }
+
+/* Kachel zum Hochladen/* Kachel zum Hochladen: gleiche Größe wie ein Motiv, aber ohne Bild */
+.motiv-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border-style: dashed;
+}
+
+.motiv-upload .upload-mark {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.motiv-upload .motiv-titel { margin-top: 12px; }
+
+#start-notice {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(242, 201, 76, 0.14);
+  border: 1px solid rgba(242, 201, 76, 0.4);
+  font-size: 0.84rem;
+}
+
+#rules {
+  margin-top: 22px;
+  text-align: left;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.18);
+}
+
+#rules summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; list-style: none; }
+#rules summary::-webkit-details-marker { display: none; }
+#rules summary::before { content: "▸ "; color: var(--accent); }
+#rules[open] summary::before { content: "▾ "; }
+
+#rules ul {
+  margin: 12px 0 4px;
+  padding-left: 20px;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------
+   Spielbildschirm
+   ------------------------------------------------------------------ */
+
+#game-screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 22px;
+  display: grid;
+  /* Seitenspalten mindestens so breit wie der Zurück-Knopf, damit der
+     Titel mittig steht und trotzdem nie darunter rutscht. */
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 16px;
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+#game-title .brand-mark { font-size: 1.3rem; }
+#topbar h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+
+#stats { display: flex; gap: 10px; flex-wrap: wrap;
+  grid-column: 3;
+  justify-self: end;
+}
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--panel-border);
+  min-width: 84px;
+}
+
+.stat-label {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-dim);
+}
+
+.stat-value { font-size: 0.98rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+#board-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#tisch {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+#tisch:active { cursor: grabbing; }
+
+/* ------------------------------------------------------------------
+   Fußzeile
+   ------------------------------------------------------------------ */
+
+#game-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 22px;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--panel-border);
+}
+
+#footer-tools, #footer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+
+.action-btn.primary { background: var(--accent); color: #241a04; border-color: transparent; }
+.action-btn.primary:hover { filter: brightness(1.1); }
+.action-btn .icon { font-size: 0.95rem; }
+
+/* ------------------------------------------------------------------
+   Überlagerungen
+   ------------------------------------------------------------------ */
+
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(3, 12, 7, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-box { text-align: center; }
+
+.loading-mark {
+  display: block;
+  font-size: 3rem;
+  animation: wippen 1.4s ease-in-out infinite;
+}
+
+@keyframes wippen {
+  0%, 100% { transform: rotate(-12deg) scale(1); }
+  50% { transform: rotate(12deg) scale(1.12); }
+}
+
+#loading-text { color: var(--ink-dim); font-size: 0.92rem; margin-top: 14px; }
+
+#end-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(3, 12, 7, 0.76);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.confetti {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes fall {
+  from { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  to { transform: translateY(105vh) rotate(720deg); opacity: 0.15; }
+}
+
+#end-box {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  background: rgba(9, 32, 20, 0.97);
+  border: 1px solid var(--panel-border);
+  border-top: 3px solid var(--accent);
+  border-radius: 18px;
+  padding: 32px 34px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+#end-box h2 { margin: 0 0 10px; font-size: 1.5rem; }
+.end-mark { filter: drop-shadow(0 0 8px rgba(242,201,76,0.5)); }
+#end-text { color: var(--ink-dim); margin: 0 0 22px; font-size: 0.95rem; }
+#end-back { margin-bottom: 20px; }
+.end-actions { display: flex; justify-content: center; gap: 10px; }
+
+.hub-return-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.hub-return-link:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------------
+   Kleine Bildschirme
+   ------------------------------------------------------------------ */
+
+@media (max-width: 720px) {
+  #start-screen { padding: 68px 16px 24px; }
+  #topbar { padding: 56px 14px 12px; flex-direction: column; align-items: stretch; gap: 10px; }
+  #game-title { justify-content: center; }
+  #stats { justify-content: center; }
+  #game-footer { padding: 10px 12px; justify-content: center; }
+  .start-card { padding: 28px 20px; }
+}
+
+/* Solange M gehalten wird, zieht die linke Taste ein Auswahlrechteck. */
+#tisch.waehlt { cursor: crosshair; }
