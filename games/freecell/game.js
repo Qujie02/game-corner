@@ -40,6 +40,15 @@ const TISCH_EINHEITEN = 8 + 7 * LUECKE_ANTEIL;
 const VERSATZ_MAX = 0.28;
 const VERSATZ_MIN = 0.085;
 
+/* Womit gerechnet wird, wenn die Höhe über die Kartengröße entscheidet.
+
+   Mit VERSATZ_MIN käme zwar die größtmögliche Karte heraus, aber die
+   Spalten lägen dann fast deckungsgleich übereinander – von jeder Karte
+   bliebe ein Streifen von acht Prozent, auf dem nichts zu erkennen ist.
+   Lieber etwas kleinere Karten, von denen man ein Fünftel sieht: Das
+   reicht für Wert und Farbe in der Ecke. */
+const VERSATZ_ZIEL = 0.2;
+
 const ZOOM_SCHRITT = 1.12;
 
 /* So lange leuchtet ein Hinweis. */
@@ -250,19 +259,39 @@ function passeGroesseAn() {
   if (!spiel) return;
   const platz = freierPlatz();
 
-  const passend = platz.breite / TISCH_EINHEITEN;
-  const w = Math.max(KARTE_MIN, Math.min(KARTE_MAX,
-    autoGroesse ? passend : passend * zoomFaktor));
-  const h = w * KARTE_VERHAELTNIS;
-  const luecke = Math.max(3, w * LUECKE_ANTEIL);
-  const titelHoehe = handyAnsicht() ? 12 : 15;
-  const obenY = titelHoehe + 3;
-  const tableauY = obenY + h + luecke + (handyAnsicht() ? 6 : 12);
-
   let laengste = 1;
   for (let i = 0; i < spiel.spalten.length; i++) {
     if (spiel.spalten[i].length > laengste) laengste = spiel.spalten[i].length;
   }
+
+  const titelHoehe = handyAnsicht() ? 12 : 15;
+  const obenY = titelHoehe + 3;
+  const tableauAbstand = handyAnsicht() ? 6 : 12;
+
+  /* Zwei Wege zur Kartenbreite, und der engere gewinnt.
+
+     Über die Breite: acht Spalten und sieben Lücken.
+
+     Über die Höhe: darüber liegt die Reihe mit Zellen und Ablagen, darunter
+     die längste Spalte. Im Querformat auf dem Telefon ist das der engere
+     Weg – dort ist Breite reichlich und Höhe knapp, und ohne diesen Deckel
+     wurden die Karten so groß, dass die unteren hinter der Fußzeile
+     verschwanden. Alles hängt linear an w, deshalb lässt sich der Nenner
+     einmal hinschreiben: zwei Kartenhöhen, eine Lücke und der kleinste
+     Versatz je weiterer Karte der Spalte. */
+  const nachBreite = platz.breite / TISCH_EINHEITEN;
+  const hoehenNenner = 2 * KARTE_VERHAELTNIS + LUECKE_ANTEIL +
+    (laengste - 1) * KARTE_VERHAELTNIS * VERSATZ_ZIEL;
+  const nachHoehe = (platz.hoehe - obenY - tableauAbstand) / hoehenNenner;
+
+  /* Der Deckel gilt nur für "Passend". Wer von Hand vergrößert, will
+     ausdrücklich mehr sehen und darf dafür schieben – #board scrollt. */
+  const passend = Math.min(nachBreite, nachHoehe);
+  const w = Math.max(KARTE_MIN, Math.min(KARTE_MAX,
+    autoGroesse ? passend : nachBreite * zoomFaktor));
+  const h = w * KARTE_VERHAELTNIS;
+  const luecke = Math.max(3, w * LUECKE_ANTEIL);
+  const tableauY = obenY + h + luecke + tableauAbstand;
   const fuerTableau = Math.max(h, platz.hoehe - tableauY);
   let versatz = h * VERSATZ_MAX;
   if (laengste > 1) versatz = Math.min(versatz, (fuerTableau - h) / (laengste - 1));
@@ -1483,3 +1512,18 @@ document.addEventListener("keydown", (e) => {
 ladeGrad();
 zeigeStatsTabelle();
 zeigeFortsetzen();
+
+/* Auf dem Telefon fängt die Statistik zugeklappt an: Sie füllt sonst den
+   halben Startbildschirm, und wer spielen will, muss erst daran vorbei.
+   Am Rechner bleibt sie offen – dort ist der Platz da. Aufgeklappt wird
+   mit einem Tipp auf die Überschrift; die Wahl gilt bis zum Neuladen. */
+(function () {
+  const block = document.getElementById("start-stats");
+  if (!block) return;
+  /* Nicht über matchMedia: Ein Fenster, das gerade nichts zeichnet, meldet
+     null Breite, und "höchstens 720" träfe dann auch am Rechner zu – die
+     Statistik wäre grundlos zugeklappt. Null heißt hier "weiß nicht",
+     und im Zweifel bleibt sie offen. */
+  const breite = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (breite > 0 && breite <= 720) block.open = false;
+})();

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-mark">▦</span>
+        <h1>Wordle</h1>
+      </div>
+      <p class="start-sub">Drei Wörter am Tag, je fünf Buchstaben, sechs Versuche</p>
+
+      <p id="tages-zeile" class="tages-zeile"></p>
+
+      <div id="raetsel-liste" class="raetsel-liste"></div>
+
+      <div class="debug-leiste">
+        <button id="neue-raetsel" type="button" class="action-btn">
+          <span class="icon">🎲</span>Neue Rätsel
+        </button>
+        <span class="debug-hinweis">Zum Testen: wirft die drei Rätsel des Tages weg und zieht drei neue.</span>
+      </div>
+
+      <section class="stats-block">
+        <h2>Statistik</h2>
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Alle</th>
+              <th>Letzte 10</th>
+            </tr>
+          </thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <p class="stats-fussnote">Die Zugzahlen zählen nur gelöste Rätsel.</p>
+      </section>
+
+      <details id="rules">
+        <summary>Spielregeln</summary>
+        <ul>
+          <li>Gesucht ist ein deutsches Wort mit <strong>fünf Buchstaben</strong>. Sechs Versuche sind frei.</li>
+          <li>Nach jedem Versuch färbt sich jeder Buchstabe: <strong class="legende-richtig">grün</strong>, wenn er an dieser Stelle steht, <strong class="legende-dabei">gelb</strong>, wenn er im Wort vorkommt, aber woanders, und <strong class="legende-fehlt">grau</strong>, wenn er gar nicht vorkommt.</li>
+          <li>Kommt ein Buchstabe im Lösungswort nur einmal vor, im Versuch aber zweimal, wird auch nur einer eingefärbt.</li>
+          <li><strong>Umlaute werden ausgeschrieben</strong>: Ä wird zu AE, Ö zu OE, Ü zu UE. Aus ß wird SS. KÄSE heißt hier also KAESE.</li>
+          <li>Angenommen wird nur, was auf der Wortliste steht. Ein unbekanntes Wort kostet keinen Versuch.</li>
+          <li>Man muss nicht von links nach rechts tippen: <strong>Auf ein Feld klicken</strong> setzt die Schreibmarke dorthin, die Pfeiltasten verschieben sie. So lässt sich ein bekannter Buchstabe in der Mitte setzen und der Rest drumherum füllen.</li>
+          <li>Die Tastatur unter dem Feld führt Buch darüber, was von den Buchstaben schon bekannt ist.</li>
+          <li>Die drei Rätsel eines Tages hängen am Datum – auf jedem Gerät dieselben.</li>
+        </ul>
+      </details>
+
+      <button id="stats-reset" type="button">Statistik zurücksetzen</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <div id="topbar-mitte">
+        <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+          <span class="brand-mark">▦</span>
+          <h1>Wordle</h1>
+        </button>
+
+        <div id="raetsel-wechsel" role="tablist" aria-label="Rätsel wählen"></div>
+      </div>
+
+      <div id="topbar-rechts">
+        <div id="stats">
+          <div class="stat-chip">
+            <span class="stat-label">Versuche</span>
+            <span class="stat-value"><span id="versuch-nr">0</span>/<span id="versuch-max">6</span></span>
+          </div>
+        </div>
+        <button id="result-btn" class="action-btn primary hidden" title="Auswertung">
+          <span class="icon">🏆</span><span class="lang">Auswertung</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="spielfeld">
+      <div id="board" aria-label="Rateversuche"></div>
+      <p id="status-text" class="is-empty">&nbsp;</p>
+      <div id="keyboard" aria-label="Buchstabentastatur"></div>
+    </main>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2 id="end-title">Geschafft!</h2>
+      <p id="end-text"></p>
+      <p id="end-wort"></p>
+
+      <div class="end-actions">
+        <button id="end-back" class="action-btn">
+          <span class="icon">👁</span>Feld ansehen
+        </button>
+      </div>
+
+      <p class="end-label">Weiter mit:</p>
+      <div id="end-raetsel" class="end-row"></div>
+
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="../wortraten/woerter.js"></script>
+  <script src="../wortraten/regeln.js"></script>
+  <script src="../wortraten/statistik.js"></script>
+  <script src="../wortraten/eingabe.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

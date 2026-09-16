@@ -5,8 +5,9 @@
 
    Damit die Sammlung als App auf dem Startbildschirm liegt und auch ohne
    Netz startet. Der Code aller Spiele wird bei der Installation abgelegt –
-   zusammen keine 500 Kilobyte; die Puzzle-Bilder bleiben ausgenommen, die
-   sind zu zweit über zwanzig Megabyte groß.
+   zusammen knapp ein Megabyte, wovon die Wordle-Wortliste allein gut fünfzig
+   Kilobyte ausmacht; die Puzzle-Bilder bleiben ausgenommen, die sind zu
+   zweit über zwanzig Megabyte groß.
 
    Ausgeliefert wird aus dem Speicher, und parallel wird im Hintergrund die
    neue Fassung geholt: Nach dem Hochladen einer Änderung sieht man sie also
@@ -61,6 +62,19 @@ const SCHALE = [
   "./games/mahjong/game.js",
   "./games/mahjong/engine.js",
   "./games/mahjong/motive.js",
+
+  "./games/wortraten/woerter.js",
+  "./games/wortraten/regeln.js",
+  "./games/wortraten/statistik.js",
+  "./games/wortraten/eingabe.js",
+
+  "./games/wordle/index.html",
+  "./games/wordle/style.css",
+  "./games/wordle/game.js",
+
+  "./games/quordle/index.html",
+  "./games/quordle/style.css",
+  "./games/quordle/game.js",
 
   "./games/puzzle/index.html",
   "./games/puzzle/style.css",

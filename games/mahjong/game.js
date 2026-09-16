@@ -17,7 +17,13 @@
    ===================================================================== */
 
 const STATS_KEY = "mahjongStats";
-const SPIEL_KEY = "mahjongSpiel";
+/* Die 2 im Schlüssel trennt von Ständen, die vor der Regeländerung bei den
+   Blumen entstanden sind. Dort konnten eine Pflaume und eine Orchidee ein
+   Paar sein; nach neuer Regel ließe sich so ein Tisch nicht mehr abräumen –
+   auch "Neu mischen" käme nicht weiter, weil sich aus zwei einzelnen Bildern
+   kein Paar bauen lässt. Ein alter Stand wird deshalb nicht gefunden, und es
+   beginnt ein neues Spiel. */
+const SPIEL_KEY = "mahjongSpiel2";
 const MODUS_KEY = "mahjongModus";
 
 const VORRAT_PLAETZE = 4;
@@ -32,8 +38,21 @@ const VORRAT_PLAETZE = 4;
    würde unter jedem Stein ein Splitter der Oberseite darunter hervorschauen,
    und ein Stapel sähe aus wie leicht verrutschte Steine. */
 const STEIN_VERHAELTNIS = 1.35;
-const EBENE_DX = 0.18;
-const EBENE_DY = 0.13;
+/* Die Dicke – und damit der Ebenenversatz. Ein Mahjongstein ist ein Plättchen
+   und kein Backstein: Er ist gut dreimal so breit wie dick. Zu dick gezeichnet
+   kippt der Eindruck, aus den Steinen werden Klötze, und ein Aufbau aus fünf
+   Ebenen sieht aus wie eine Mauer statt wie ein Haufen Steine.
+
+   Beide Zahlen ergeben in Pixeln fast dasselbe (0.115·w gegen 0.085·h =
+   0.115·w), denn schräg von links oben gesehen ist die Dicke in beide
+   Richtungen gleich weit zu sehen. */
+const EBENE_DX = 0.115;
+const EBENE_DY = 0.085;
+
+/* Rundung der Steinecken, als Anteil der Steinbreite. Steht hier und nicht im
+   Stylesheet, weil `steinPfade` damit rechnet – dieselbe Zahl an zwei Stellen
+   geht früher oder später auseinander. */
+const STEIN_RUNDUNG = 0.1;
 
 /* Grenzen für die Steingröße. Unter zwanzig Pixeln ist nichts mehr zu
    erkennen, über hundert passt kein Aufbau mehr aufs Blatt. */
@@ -304,6 +323,94 @@ function freierPlatz() {
   };
 }
 
+/**
+ * Die beiden Umrisse eines Steins als SVG-Pfade: Körper und rechte Wand.
+ *
+ * Ein Stein wird schräg von links oben gezeigt: Die Oberseite liegt bei
+ * (0, 0), die Grundfläche um die Dicke (dx, dy) nach rechts unten versetzt.
+ * Der Körperumriss ist die Hülle um beide – oben und links folgt er der
+ * Oberseite, rechts und unten der Grundfläche, und an zwei Stellen läuft
+ * eine Schräge von der einen zur anderen: oben rechts und unten links.
+ * Genau dort sieht man dem Stein seine Dicke an.
+ *
+ * Der Haken sind diese beiden Stellen. Beide Flächen haben runde Ecken, und
+ * eine Schräge, die an der Ecke der Oberseite ansetzt, setzt an einem Punkt
+ * an, den es nicht gibt – dort ist ein Bogen. Das Ergebnis ist ein Knick:
+ * Die Kante in die Tiefe liegt nicht an der Oberseite an, sondern schneidet
+ * sie. Mit `clip-path: polygon()` ist das nicht zu beheben, denn Polygone
+ * haben keine Rundungen; deshalb Pfade.
+ *
+ * Richtig ist die gemeinsame Tangente. Beide Rundungen haben denselben
+ * Radius, ihre Mittelpunkte liegen um (dx, dy) auseinander – also verläuft
+ * die Schräge parallel zum Versatz und berührt jeden Bogen dort, wo dessen
+ * Normale senkrecht auf dem Versatz steht. Der Umriss hat dann nirgends eine
+ * Ecke: nur Bögen und Geraden, die bündig ineinander übergehen.
+ *
+ * Der zweite Pfad trennt die rechte Wand von der unteren. Ein einfacher
+ * senkrechter Schnitt an der Kante der Oberseite reicht dafür nicht: An der
+ * oberen rechten Rundung liegt links dieser Linie noch Wand, die nach rechts
+ * zeigt, und die bekäme den Ton der Unterseite – ein heller Zwickel genau in
+ * der Ecke, auf die man beim Stapel zuerst schaut. Die Wände treffen sich
+ * stattdessen dort, wo die Rundung der unteren rechten Ecke von "zeigt nach
+ * rechts" auf "zeigt nach unten" umschlägt, also bei 45 Grad.
+ *
+ * Gerechnet wird zur Laufzeit, weil die Pfade in Pixeln stehen und damit an
+ * der Steingröße hängen. Alle Steine teilen sich dieselben zwei Pfade.
+ */
+function steinPfade(w, h, dx, dy, r) {
+  const W = w + dx, H = h + dy;
+  const laenge = Math.hypot(dx, dy);
+  /* Normale der Schräge: senkrecht auf dem Versatz, nach rechts oben. */
+  const nx = dy / laenge, ny = -dx / laenge;
+
+  const p = (x, y) => x.toFixed(2) + "," + y.toFixed(2);
+  const rr = r.toFixed(2) + "," + r.toFixed(2);
+  /* Bogen im Uhrzeigersinn bzw. dagegen. */
+  const bogen = (x, y) => "A" + rr + " 0 0 1 " + p(x, y);
+  const gegen = (x, y) => "A" + rr + " 0 0 0 " + p(x, y);
+
+  /* Die Berührpunkte der beiden Schrägen auf der Oberseite. */
+  const t1x = w - r + r * nx, t1y = r + r * ny;      /* oben rechts */
+  const t2x = r - r * nx, t2y = h - r - r * ny;      /* unten links */
+  /* Die Naht der beiden Wände auf der Rundung unten rechts. */
+  const qx = w - r + r * Math.SQRT1_2, qy = h - r + r * Math.SQRT1_2;
+
+  /* Körper, im Uhrzeigersinn ab dem Anfang der oberen Kante. */
+  const koerper = [
+    "M" + p(r, 0),
+    "L" + p(w - r, 0),
+    bogen(t1x, t1y),
+    "L" + p(t1x + dx, t1y + dy),
+    bogen(W, dy + r),
+    "L" + p(W, H - r),
+    bogen(W - r, H),
+    "L" + p(dx + r, H),
+    bogen(t2x + dx, t2y + dy),
+    "L" + p(t2x, t2y),
+    bogen(0, h - r),
+    "L" + p(0, r),
+    bogen(r, 0),
+    "Z",
+  ].join(" ");
+
+  /* Rechte Wand: außen der Grundfläche folgend, innen der Oberseite –
+     zwischen den Berührpunkten oben rechts und der Naht unten rechts. */
+  const wand = [
+    "M" + p(t1x, t1y),
+    "L" + p(t1x + dx, t1y + dy),
+    bogen(W, dy + r),
+    "L" + p(W, H - r),
+    bogen(qx + dx, qy + dy),
+    "L" + p(qx, qy),
+    gegen(w, h - r),
+    "L" + p(w, r),
+    gegen(t1x, t1y),
+    "Z",
+  ].join(" ");
+
+  return { koerper: koerper, wand: wand };
+}
+
 /** Schreibt die gerechneten Maße ins Stylesheet und an das Brett. */
 function schreibeMasse() {
   const wurzel = document.documentElement;
@@ -311,6 +418,13 @@ function schreibeMasse() {
   wurzel.style.setProperty("--stein-h", masse.h.toFixed(2) + "px");
   wurzel.style.setProperty("--ebene-dx", masse.dx.toFixed(2) + "px");
   wurzel.style.setProperty("--ebene-dy", masse.dy.toFixed(2) + "px");
+
+  const radius = masse.w * STEIN_RUNDUNG;
+  wurzel.style.setProperty("--stein-radius", radius.toFixed(2) + "px");
+  /* In Anführungszeichen, weil `path()` eine Zeichenkette erwartet. */
+  const pfade = steinPfade(masse.w, masse.h, masse.dx, masse.dy, radius);
+  wurzel.style.setProperty("--stein-umriss", '"' + pfade.koerper + '"');
+  wurzel.style.setProperty("--stein-wandumriss", '"' + pfade.wand + '"');
 
   const brett = document.getElementById("brett");
   brett.style.width = masse.breite.toFixed(1) + "px";
@@ -411,7 +525,13 @@ function baueSteinElement(s) {
  */
 function schreibeStein(el, s) {
   const a = STEIN_ARTEN[s.art];
-  el.innerHTML = `<span class="stein-face">${steinMotiv(s.art)}</span>`;
+  /* Drei Schichten: der Stein trägt die Oberseite, die Oberseite trägt das
+     eingelassene Motivfeld, darin liegt das Bild. Die Trennung von Feld und
+     Oberseite ist keine Schikane – nur so lässt sich die Vertiefung zeichnen,
+     in der auf einem echten Stein das Zeichen sitzt. */
+  el.innerHTML = '<span class="stein-face">' +
+                   `<span class="stein-inlay">${steinMotiv(s.art)}</span>` +
+                 "</span>";
   el.title = a.name;
   /* Klassen für Auswahl und Zustand setzt `zeichne`; hier nur die Gruppe. */
   el.dataset.klasse = a.klasse;
@@ -1055,9 +1175,29 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "Escape" && spiel.gewaehlt) { spiel.gewaehlt = null; zeichne(); }
 });
 
+/* Der Stand unter dem alten Schlüssel wird nie wieder gelesen (siehe
+   SPIEL_KEY). Einmal wegräumen, statt ihn für immer im Speicher des Browsers
+   liegen zu lassen. */
+try { localStorage.removeItem("mahjongSpiel"); } catch (e) { /* egal */ }
+
 ladeModus();
 setzeMarkierung();
 setzeVarianteAnzeige();
 baueLayoutAuswahl();
 zeigeStatsTabelle();
 zeigeFortsetzen();
+
+/* Auf dem Telefon fängt die Statistik zugeklappt an: Sie füllt sonst den
+   halben Startbildschirm, und wer spielen will, muss erst daran vorbei.
+   Am Rechner bleibt sie offen – dort ist der Platz da. Aufgeklappt wird
+   mit einem Tipp auf die Überschrift; die Wahl gilt bis zum Neuladen. */
+(function () {
+  const block = document.getElementById("start-stats");
+  if (!block) return;
+  /* Nicht über matchMedia: Ein Fenster, das gerade nichts zeichnet, meldet
+     null Breite, und "höchstens 720" träfe dann auch am Rechner zu – die
+     Statistik wäre grundlos zugeklappt. Null heißt hier "weiß nicht",
+     und im Zweifel bleibt sie offen. */
+  const breite = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (breite > 0 && breite <= 720) block.open = false;
+})();
