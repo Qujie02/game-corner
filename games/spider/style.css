@@ -33,9 +33,19 @@ body {
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background:
+  /* Die Grundfarbe trägt die ganze Seite, der Verlauf liegt nur oben darauf.
+
+     Beides ist nötig: `html` und `body` sind genau fensterhoch, und ein
+     Hintergrund ohne `no-repeat` kachelt darunter weiter – bei einer Seite,
+     die länger ist als das Fenster, sieht man die Wiederholung als harte
+     Kante quer über den Schirm. Ohne Grundfarbe wiederum bliebe unterhalb
+     des Verlaufs nichts übrig. Der Verlauf endet unten ohnehin in --felt-3,
+     deshalb geht er nahtlos in die Fläche über. */
+  background-color: var(--felt-3);
+  background-image:
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
     radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: no-repeat;
 }
 
 .hidden {
@@ -53,6 +63,9 @@ body {
 }
 
 .start-card {
+  /* Ohne Deckel wächst die Karte mit ihrem breitesten Kind – auf dem
+     Telefon schob sie die Seite um gut fünfzig Pixel zur Seite. */
+  max-width: 100%;
   background: rgba(6, 22, 14, 0.6);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -244,14 +257,38 @@ body {
   border-top: 1px solid var(--panel-border);
 }
 
-#start-stats h2 {
+/* Die Überschrift ist zugleich der Klappgriff: Auf dem Telefon fängt die
+   Statistik zugeklappt an, weil sie sonst den halben Startbildschirm
+   füllt, bevor man überhaupt spielen kann. Am Rechner bleibt sie offen –
+   dort ist der Platz da. Zugeklappt wird in game.js. */
+#start-stats summary {
   margin: 0 0 14px;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  cursor: pointer;
+  list-style: none;
 }
+
+#start-stats summary::-webkit-details-marker { display: none; }
+
+/* Das Dreieck zeigt, dass hier etwas auf- und zugeht – ohne Marker sieht
+   die Zeile sonst aus wie eine gewöhnliche Überschrift. */
+#start-stats summary::after {
+  content: " ▾";
+  color: var(--accent);
+}
+
+#start-stats:not([open]) summary {
+  margin-bottom: 0;
+}
+
+#start-stats:not([open]) summary::after { content: " ▸"; }
+
+#start-stats summary:hover { color: var(--ink); }
+#start-stats summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .stats-scope {
   display: flex;
@@ -377,7 +414,12 @@ body {
 /* ---------- Game screen layout ---------- */
 
 #game-screen {
+  /* `vh` rechnet auf dem Telefon mit versteckter Adressleiste: Solange die
+     zu sehen ist, ist die Seite höher als das Sichtbare, und die Fußzeile
+     rutscht unter den Rand. `dvh` ist die Höhe, die gerade wirklich da ist.
+     Die erste Zeile bleibt als Rückfall für Browser ohne `dvh`. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -768,6 +810,62 @@ body {
 .foundation-slot.filled.red { color: var(--red); }
 .foundation-slot.filled.black { color: var(--black); }
 
+/* ---------- Knappe Ablage: eine Karte je Farbe ----------
+
+   Zweite Darstellung derselben Auskunft, für kleine Schirme. Acht Fächer
+   nebeneinander sind dort verschwendeter Platz – bei einer Farbe stehen
+   dort acht gleiche Symbole. Welche Fassung zu sehen ist, entscheiden die
+   Bildschirmabfragen weiter unten; hier ist sie aus. */
+
+#foundations-kompakt { display: none; }
+
+.fk-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fk-zahl {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: right;
+}
+
+.fk-karte {
+  width: 26px;
+  height: 36px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 0.92rem;
+  border: 1.5px dashed rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.18);
+}
+
+.fk-eintrag.gefuellt .fk-zahl { color: var(--accent); }
+
+.fk-eintrag.gefuellt .fk-karte {
+  border: 1px solid rgba(255,255,255,0.25);
+  background: linear-gradient(160deg, #fdfdfd, #e7e7e7);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+
+.fk-eintrag.gefuellt .fk-karte.red { color: var(--red); }
+.fk-eintrag.gefuellt .fk-karte.black { color: var(--black); }
+
+/* Hüpft nur, wenn der Zähler steigt – game.js setzt die Klasse dafür neu. */
+.fk-eintrag.pop .fk-karte { animation: foundation-pop 420ms var(--ease-move); }
+
+/* ---------- Kopfzeile einklappen ----------
+
+   Auf großen Schirmen gibt es den Knopf nicht: Dort ist Höhe kein knappes
+   Gut, und ein Knopf, der nichts löst, ist nur ein Knopf mehr. */
+
+#topbar-toggle { display: none; }
+
 @keyframes foundation-pop {
   0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
   60% { transform: scale(1.12) rotate(3deg); opacity: 1; }
@@ -1059,6 +1157,20 @@ body {
     --frame-margin: 8px;
   }
 
+  /* 52 Pixel Innenabstand je Seite sind hier ein Drittel der Breite. */
+  .start-card { padding: 26px 16px; }
+
+  /* Drei Knöpfe zu mindestens 120 Pixeln plus Abständen brauchen fast
+     400 – nebeneinander passen sie hier nicht. Sie dürfen umbrechen und
+     sich den Platz teilen. */
+  .start-options { flex-wrap: wrap; gap: 10px; }
+  .start-btn { min-width: 0; flex: 1 1 96px; padding: 14px 10px; }
+
+  /* Vier Spalten mal 32 Pixel Innenabstand sind mehr als ein Drittel der
+     Breite – die Tabelle passte sonst nicht in die Karte. */
+  #stats-table { width: 100%; }
+  #stats-table th, #stats-table td { padding: 6px 4px; }
+
   /* Nur der Pfeil: Der Schriftzug kostet Platz, den die Kopfzeile braucht. */
   .corner-home {
     top: 8px;
@@ -1070,28 +1182,38 @@ body {
     display: none;
   }
 
+  /* Kopfzeile als Einzeiler: Titel, Werte und Klappknopf in einer Reihe.
+     Der Schriftzug fällt weg – welches Spiel läuft, weiß man; das ♠ bleibt
+     als Weg zur Übersicht. Links bleibt Platz für den Knopf „Game Corner",
+     der als Überlagerung darüber liegt. */
   #topbar {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 8px 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 4px 6px 4px 44px;
   }
 
   #game-title {
     grid-column: 1;
-    padding: 2px 8px;
-    gap: 7px;
+    padding: 0 4px;
+    gap: 0;
   }
 
-  #topbar h1 {
-    font-size: 1rem;
+  #topbar h1 { display: none; }
+
+  /* Das ♠ war mit 1,5 rem das höchste Element der Zeile und bestimmte damit
+     allein die Höhe der Kopfzeile. `line-height` dazu, weil sonst die
+     Zeilenbox der Schrift höher ausfällt als das Zeichen. */
+  #topbar .brand-suit {
+    font-size: 1.1rem;
+    line-height: 1;
   }
 
   #stats {
-    grid-column: 1;
+    grid-column: 2;
     justify-self: stretch;
     justify-content: center;
-    gap: 5px;
-    /* Bei "Schwer · lösbar" wird die Zeile lang – dann darf sie schieben. */
+    gap: 4px;
+    /* Wird die Zeile trotzdem zu lang, darf sie schieben. */
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -1100,11 +1222,69 @@ body {
     display: none;
   }
 
+  /* Bezeichnung neben den Wert statt darüber: halbiert die Höhe. */
   .stat-chip {
     min-width: 0;
-    padding: 3px 7px;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 5px;
     flex: none;
   }
+
+  .stat-label { font-size: 0.55rem; }
+  .stat-value { font-size: 0.82rem; }
+
+  /* Der einzige Wert, der sich während des Spiels nie ändert – und der
+     breiteste. Auf 375 Pixeln passen sonst nicht alle in eine Zeile. */
+  .stat-chip[data-chip="modus"] { display: none; }
+
+  #topbar-toggle {
+    grid-column: 3;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--panel-border);
+    border-radius: 7px;
+    background: rgba(0,0,0,0.25);
+    color: var(--ink-dim);
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .toggle-pfeil {
+    display: block;
+    transition: transform 160ms ease;
+  }
+
+  /* Eingeklappt: Die Kopfzeile verschwindet ganz, nur der Knopf bleibt als
+     Lasche über dem Feld stehen – sonst käme man nicht mehr an die Werte. */
+  body.kopf-zu #topbar {
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 0;
+    box-shadow: none;
+  }
+
+  body.kopf-zu #game-title,
+  body.kopf-zu #stats { display: none; }
+
+  body.kopf-zu #topbar-toggle {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+  }
+
+  body.kopf-zu .toggle-pfeil { transform: rotate(180deg); }
+
+  /* Statt acht Fächern eine Karte je Farbe mit Zähler davor. */
+  #foundations { display: none; }
+  #foundations-kompakt { display: flex; gap: 10px; align-items: center; }
 
   #board {
     flex-wrap: wrap;
@@ -1130,11 +1310,6 @@ body {
     width: auto;
     margin-left: auto;
     order: 2;
-  }
-
-  #foundations {
-    grid-template-columns: repeat(8, 20px);
-    gap: 4px;
   }
 
   #tableau {
@@ -1169,4 +1344,88 @@ body {
   #size-controls {
     display: none;
   }
+}
+
+/* =====================================================================
+   Querformat auf dem Telefon
+
+   Breit, aber flach – hier ist die Höhe das knappe Gut, nicht die Breite.
+   Die Handy-Abfrage oben legt Stapel und Ablage in eine eigene Zeile über
+   das Tableau. Im Hochformat ist das richtig, im Querformat kostet es rund
+   sechzig Pixel Höhe und lässt die Mitte leer. Also zurück an die Seiten,
+   wie am großen Schirm: Das Tableau bekommt die volle Höhe, und weil sich
+   die Kartengröße nach der freien Höhe richtet, werden die Karten dabei
+   sogar größer.
+   ===================================================================== */
+
+@media (max-height: 520px) and (min-width: 560px) {
+  /* Einzige Quelle für diese Bildschirmgröße: game.js liest den Wert, statt
+     die Abfrage ein zweites Mal zu formulieren. Sonst driften beide
+     auseinander, sobald einer die Grenze verschiebt. */
+  :root { --seitliche-schienen: 1; }
+
+  #board {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+    padding: 8px var(--frame-margin);
+    overflow-x: auto;
+  }
+
+  /* Mittig an der Seite statt oben: So bleibt die obere Ecke frei für den
+     Knopf „Game Corner" und die Lasche der eingeklappten Kopfzeile. */
+  #side-rail {
+    order: 0;
+    width: 44px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  #foundations-rail {
+    order: 2;
+    width: auto;
+    align-self: center;
+  }
+
+  #foundations-kompakt {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #tableau {
+    order: 1;
+    flex-basis: auto;
+    align-self: flex-start;
+  }
+
+  /* Knöpfe dichter: Jeder Pixel hier ist ein Pixel mehr für die Karten. */
+  #game-footer { padding: 5px 8px; }
+  .action-btn { padding: 5px 9px; font-size: 0.73rem; }
+}
+
+/* ------------------------------------------------------------------
+   Trefferflächen auf dem Telefon
+
+   Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man
+   Schaltflächen nicht mehr zuverlässig, und knapp danebenzutippen ist
+   ärgerlicher als ein paar Pixel mehr Rand. Der Block steht am Ende und
+   hebt nur Höhen an – Aussehen, Farben und Anordnung bleiben, wie sie
+   das jeweilige Spiel gesetzt hat.
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  /* Der Weg zur Übersicht wird von allen Knöpfen am häufigsten gebraucht
+     und war mit 33 mal 30 Pixeln der kleinste. */
+  .corner-home {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Aufklappzeilen sind reine Textzeilen und damit nur so hoch wie die
+     Schrift – ein paar Pixel Luft machen sie treffbar. */
+  summary { padding-top: 8px; padding-bottom: 8px; }
+
+  #stats-reset { padding-top: 10px; padding-bottom: 10px; }
+  .stats-scope-btn { min-height: 36px; }
 }

@@ -48,6 +48,7 @@ let state = null;
 let currentDifficulty = 1;
 /* Ob aussichtslose Blätter aussortiert werden sollen. */
 let loesbarModus = false;
+let kopfzeileOffen = true;
 /* Aussortiert wird nur hier: Mit einer Farbe ist ohnehin praktisch jedes
    Blatt zu schaffen (gemessen 200 von 200), und vier Farben sollen schwer
    bleiben. Bei zwei Farben sind es 98 von 100 – die restlichen zwei fängt
@@ -55,6 +56,8 @@ let loesbarModus = false;
 const LOESBAR_GRAD = 2;
 const cardElements = new Map();
 const slotElements = [];
+const foundationSlots = [];
+let foundationCompact = [];
 let drag = null;
 let timerInterval = null;
 let elapsedSeconds = 0;
@@ -100,7 +103,29 @@ function passeGroesseAnFenster() {
 
   if (!handyAnsicht()) { applySizeScale(1); return; }
   const rand = 2 * 8;   /* --frame-margin in der Handy-Ansicht */
-  const nachBreite = (d.clientWidth - rand) / (NUM_COLUMNS * BASE_CARD_W + (NUM_COLUMNS - 1) * BASE_GAP);
+
+  /* Im Querformat stehen Stapel und Ablage neben dem Tableau und nehmen ihm
+     Breite weg. Im Hochformat liegen sie darüber und kosten nichts. Ob das
+     eine oder das andere gilt, sagt das Stylesheet über `--seitliche-
+     schienen` – so steht die Bildschirmgrenze nur an einer Stelle. */
+  const seitlich = getComputedStyle(d)
+    .getPropertyValue("--seitliche-schienen").trim() === "1";
+  /* Beide Schienen haben feste Breiten, unabhängig von der Kartengröße. Die
+     Ersatzwerte greifen, solange der Spielschirm noch verborgen ist und
+     alles Null misst. */
+  const schienen = seitlich
+    ? (breiteVon("side-rail") || 44) + (breiteVon("foundations-rail") || 62) + 2 * 10
+    : 0;
+
+  /* Karten- und Abstandsmaße werden auf ganze Pixel gerundet, jedes um bis
+     zu einem halben nach oben. Bei zehn Spalten und neun Abständen kommen so
+     knapp zehn Pixel zusammen, die das Tableau breiter machen als gerechnet.
+     Ohne diese Reserve muss man am Ende schieben – genau das, was die
+     Rechnung verhindern soll. */
+  const rundungsreserve = 10;
+
+  const nachBreite = (d.clientWidth - rand - schienen - rundungsreserve) /
+    (NUM_COLUMNS * BASE_CARD_W + (NUM_COLUMNS - 1) * BASE_GAP);
 
   // Im Querformat ist nicht die Breite knapp, sondern die Höhe: Es soll eine
   // Spalte von etwa zehn Karten hineinpassen, ohne dass man scrollen muss.
@@ -115,6 +140,11 @@ function passeGroesseAnFenster() {
 function hoeheVon(id) {
   const el = document.getElementById(id);
   return el ? el.offsetHeight : 0;
+}
+
+function breiteVon(id) {
+  const el = document.getElementById(id);
+  return el ? el.offsetWidth : 0;
 }
 
 function formatTime(totalSeconds) {
@@ -165,6 +195,41 @@ function speichereModus() {
   }
 }
 
+/* ---------------------------------------------------------------------
+   Kopfzeile ein- und ausklappen
+
+   Im Querformat eines Telefons ist die Höhe das knappste Gut, und die
+   Kopfzeile verkleinert dort sogar die Karten – die Kartengröße richtet
+   sich nach dem, was unter ihr übrig bleibt. Wer Zeit und Züge gerade nicht
+   braucht, klappt sie weg. Auf großen Schirmen gibt es den Knopf nicht: Das
+   Stylesheet blendet ihn aus, und die Klasse wirkt dort ebenfalls nicht.
+   --------------------------------------------------------------------- */
+
+const KOPF_KEY = "spiderSolitaireKopfzeile";
+
+function ladeKopfzeile() {
+  try {
+    return localStorage.getItem(KOPF_KEY) !== "zu";
+  } catch (e) {
+    return true;
+  }
+}
+
+function setzeKopfzeile(offen) {
+  kopfzeileOffen = offen;
+  /* Die Klasse sitzt am `body`, nicht an der Kopfzeile: Der Knopf „Game
+     Corner" liegt als Überlagerung außerhalb und muss mitrücken. */
+  document.body.classList.toggle("kopf-zu", !offen);
+  const btn = document.getElementById("topbar-toggle");
+  btn.setAttribute("aria-expanded", offen ? "true" : "false");
+  btn.title = offen ? "Kopfzeile einklappen" : "Kopfzeile ausklappen";
+  try {
+    localStorage.setItem(KOPF_KEY, offen ? "auf" : "zu");
+  } catch (e) { /* egal */ }
+  /* Die Karten dürfen den gewonnenen Platz sofort nutzen. */
+  passeGroesseAnFenster();
+}
+
 /** Beschriftung eines Grades, im lösbaren Modus mit Zusatz. */
 function gradName(difficulty, loesbar) {
   return DIFFICULTY_LABELS[difficulty] + (loesbar ? " · lösbar" : "");
@@ -201,7 +266,7 @@ function loadSavedGame() {
 }
 
 function clearSavedGame() {
-  localStorage.removeItem(SAVE_KEY);
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* egal */ }
 }
 
 function refreshContinueButton() {
@@ -292,7 +357,7 @@ function statistikSatz(loesbar) {
 }
 
 function saveStats() {
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) { /* egal */ }
 }
 
 function recordGameStarted(difficulty, loesbar) {
@@ -1316,20 +1381,92 @@ function render(opts) {
   document.getElementById("undo-btn").disabled = state.history.length === 0;
 }
 
-function renderFoundations() {
+/**
+ * Baut die acht Ablagefächer – einmal, nicht bei jedem Zeichnen.
+ *
+ * Das ist der Grund, warum es diese Funktion gibt: Ein neu angelegtes
+ * Element mit der Klasse `filled` lässt seine Aufsetz-Animation von vorn
+ * laufen. Wurden die Fächer bei jedem Zeichnen neu gebaut, hüpfte also bei
+ * jedem Zug jeder fertige Stapel noch einmal.
+ */
+function ensureFoundationSlots() {
+  if (foundationSlots.length > 0) return;
   const el = document.getElementById("foundations");
-  el.innerHTML = "";
   for (let i = 0; i < 8; i++) {
     const slot = document.createElement("div");
-    const f = state.foundations[i];
-    if (f) {
-      slot.className = `foundation-slot filled ${f.color}`;
-      slot.textContent = f.suit;
-    } else {
-      slot.className = "foundation-slot";
-    }
+    slot.className = "foundation-slot";
     el.appendChild(slot);
+    foundationSlots.push(slot);
   }
+}
+
+/**
+ * Baut die knappe Fassung: eine Karte je Farbe, davor ein Zähler.
+ *
+ * Auf einem Telefon sind acht Fächer nebeneinander verschwendeter Platz –
+ * bei einer Farbe stehen dort acht gleiche Symbole. Ein Eintrag je Farbe
+ * sagt dasselbe und lässt Raum für das Spielfeld. Gezeigt werden alle Farben
+ * des Schwierigkeitsgrads, auch die noch leeren: So sieht man, was fehlt,
+ * und die Zeile hüpft nicht bei jedem fertigen Stapel.
+ */
+function ensureFoundationCompact() {
+  const el = document.getElementById("foundations-kompakt");
+  const suits = SUITS_BY_DIFFICULTY[currentDifficulty] || [];
+  if (foundationCompact.length === suits.length &&
+      foundationCompact.every((e, i) => e.dataset.suit === suits[i])) return;
+
+  el.innerHTML = "";
+  foundationCompact = suits.map((suit) => {
+    const eintrag = document.createElement("div");
+    eintrag.className = "fk-eintrag";
+    eintrag.dataset.suit = suit;
+    eintrag.innerHTML =
+      '<span class="fk-zahl"></span>' +
+      `<span class="fk-karte ${SUIT_INFO[suit].color}">${suit}</span>`;
+    el.appendChild(eintrag);
+    return eintrag;
+  });
+}
+
+/**
+ * Bringt beide Darstellungen der Ablage auf den Stand des Spiels.
+ *
+ * Angefasst wird nur, was sich geändert hat. Ein Fach, das schon `filled`
+ * ist, bleibt unberührt und hüpft deshalb nicht wieder; eines, das neu
+ * dazukommt, bekommt die Klasse zum ersten Mal und läuft genau einmal. Nach
+ * einem Zurücknehmen fällt die Klasse weg – wird derselbe Stapel später
+ * wieder fertig, gehört die Animation dann auch wieder dazu.
+ */
+function renderFoundations() {
+  ensureFoundationSlots();
+  foundationSlots.forEach((slot, i) => {
+    const f = state.foundations[i];
+    const klasse = f ? `foundation-slot filled ${f.color}` : "foundation-slot";
+    const zeichen = f ? f.suit : "";
+    if (slot.className !== klasse) slot.className = klasse;
+    if (slot.textContent !== zeichen) slot.textContent = zeichen;
+  });
+
+  ensureFoundationCompact();
+  const anzahl = {};
+  state.foundations.forEach((f) => { anzahl[f.suit] = (anzahl[f.suit] || 0) + 1; });
+
+  foundationCompact.forEach((eintrag) => {
+    const n = anzahl[eintrag.dataset.suit] || 0;
+    const vorher = Number(eintrag.dataset.anzahl || 0);
+    if (n === vorher) return;
+    eintrag.dataset.anzahl = String(n);
+    eintrag.querySelector(".fk-zahl").textContent = n > 0 ? n + "×" : "";
+    eintrag.classList.toggle("gefuellt", n > 0);
+    /* Nur beim Dazukommen hüpfen, nicht beim Zurücknehmen. Die Klasse muss
+       kurz weg sein, sonst startet die Animation beim zweiten Stapel
+       derselben Farbe nicht neu. */
+    if (n > vorher) {
+      eintrag.classList.remove("pop");
+      void eintrag.offsetWidth;
+      eintrag.classList.add("pop");
+    }
+  });
 }
 
 function columnIndexFromClientX(clientX) {
@@ -1850,6 +1987,9 @@ document.getElementById("undo-btn").addEventListener("click", undo);
 document.getElementById("stock-pile").addEventListener("click", dealFromStock);
 document.getElementById("deadlock-btn").addEventListener("click", runDeadlockCheck);
 document.getElementById("hint-btn").addEventListener("click", runHint);
+document.getElementById("topbar-toggle").addEventListener("click", () => {
+  setzeKopfzeile(!kopfzeileOffen);
+});
 
 document.getElementById("size-up").addEventListener("click", () => {
   autoGroesse = false;
@@ -1875,6 +2015,22 @@ document.getElementById("stats-reset").addEventListener("click", () => {
   renderStatsTable();
 });
 
+setzeKopfzeile(ladeKopfzeile());
 passeGroesseAnFenster();
 renderStatsTable();
 refreshContinueButton();
+
+/* Auf dem Telefon fängt die Statistik zugeklappt an: Sie füllt sonst den
+   halben Startbildschirm, und wer spielen will, muss erst daran vorbei.
+   Am Rechner bleibt sie offen – dort ist der Platz da. Aufgeklappt wird
+   mit einem Tipp auf die Überschrift; die Wahl gilt bis zum Neuladen. */
+(function () {
+  const block = document.getElementById("start-stats");
+  if (!block) return;
+  /* Nicht über matchMedia: Ein Fenster, das gerade nichts zeichnet, meldet
+     null Breite, und "höchstens 720" träfe dann auch am Rechner zu – die
+     Statistik wäre grundlos zugeklappt. Null heißt hier "weiß nicht",
+     und im Zweifel bleibt sie offen. */
+  const breite = window.innerWidth || document.documentElement.clientWidth || 0;
+  if (breite > 0 && breite <= 720) block.open = false;
+})();

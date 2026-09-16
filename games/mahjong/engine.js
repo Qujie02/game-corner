@@ -19,9 +19,10 @@
    Ein volles Mahjong-Spiel: 144 Steine, 72 Paare.
 
    34 Arten kommen viermal vor (drei Farben mit je neun Werten, vier Winde,
-   drei Drachen). Dazu acht Einzelstücke: vier Blumen und vier Jahreszeiten.
-   Die passen untereinander – Blume auf Blume, Jahreszeit auf Jahreszeit –,
-   sonst ließen sie sich nie abräumen.
+   drei Drachen). Dazu vier Blumen und vier Jahreszeiten, von denen ein
+   echter Satz je ein Stück hat – abräumen ließe sich das nie. Ein Spiel
+   nimmt deshalb aus jeder der beiden Gruppen zwei ausgewürfelte Bilder und
+   legt sie doppelt hinein.
    --------------------------------------------------------------------- */
 
 /* Die drei Farben. `mark` ist das chinesische Zeichen der Farbe; davor steht
@@ -62,9 +63,11 @@ const JAHRESZEITEN = [
 /**
  * Alle Steinarten, nach `art` ansprechbar.
  *
- * `paar` ist der Schlüssel, der übers Zusammenpassen entscheidet: bei den
- * meisten Steinen ist er die Art selbst, bei Blumen und Jahreszeiten die
- * Gruppe. Damit braucht die Regel "passt zusammen" nur einen Vergleich.
+ * Zusammen passen ausschließlich Steine derselben Art – auch Blumen und
+ * Jahreszeiten. Früher passte hier jede Blume zu jeder anderen, wie in
+ * vielen Umsetzungen; auf dem Brett heißt das aber, dass zwei sichtbar
+ * verschiedene Bilder ein Paar sind, und das liest niemand ab. Stattdessen
+ * bringt ein Spiel von zwei Blumen je zwei Stück mit (siehe `bauePaare`).
  */
 const STEIN_ARTEN = (() => {
   const arten = {};
@@ -73,7 +76,6 @@ const STEIN_ARTEN = (() => {
       const art = farbe.art + "-" + wert;
       arten[art] = {
         art: art,
-        paar: art,
         gruppe: farbe.art,
         klasse: farbe.klasse,
         zahl: String(wert),
@@ -83,32 +85,51 @@ const STEIN_ARTEN = (() => {
     }
   });
   WINDE.forEach((wind) => {
-    arten[wind.art] = { art: wind.art, paar: wind.art, gruppe: "wind",
+    arten[wind.art] = { art: wind.art, gruppe: "wind",
                         klasse: "wind", glyph: wind.glyph, name: wind.name };
   });
   DRACHEN.forEach((d) => {
-    arten[d.art] = { art: d.art, paar: d.art, gruppe: "drache",
+    arten[d.art] = { art: d.art, gruppe: "drache",
                      klasse: d.klasse, glyph: d.glyph, name: d.name };
   });
   BLUMEN.forEach((b) => {
-    arten[b.art] = { art: b.art, paar: "blume", gruppe: "blume",
+    arten[b.art] = { art: b.art, gruppe: "blume",
                      klasse: "blume", glyph: b.glyph, name: b.name };
   });
   JAHRESZEITEN.forEach((j) => {
-    arten[j.art] = { art: j.art, paar: "jahreszeit", gruppe: "jahreszeit",
+    arten[j.art] = { art: j.art, gruppe: "jahreszeit",
                      klasse: "jahreszeit", glyph: j.glyph, name: j.name };
   });
   return arten;
 })();
 
 /**
+ * Zwei Arten aus einer Gruppe, jede als Paar gleicher Steine.
+ *
+ * Ein echter Satz hat von jeder Blume nur ein Stück – für zwei Paare aus
+ * gleichen Bildern reichen also nicht alle vier. Welche zwei mitspielen,
+ * würfelt jedes Spiel neu aus; über mehrere Runden kommen so trotzdem alle
+ * acht Bilder vor.
+ */
+function waehleDoppelpaare(gruppe, zufall) {
+  const erste = Math.floor(zufall() * gruppe.length);
+  /* Die zweite aus den übrigen drei: Der Index überspringt die erste, statt
+     bei einem Treffer neu zu würfeln – das hat kein schlechtestes Ende. */
+  let zweite = Math.floor(zufall() * (gruppe.length - 1));
+  if (zweite >= erste) zweite += 1;
+  return [[gruppe[erste].art, gruppe[erste].art],
+          [gruppe[zweite].art, gruppe[zweite].art]];
+}
+
+/**
  * Die 72 Paare, aus denen ein Spiel besteht.
  *
  * Die vierfachen Arten geben je zwei Paare gleicher Steine. Blumen und
- * Jahreszeiten werden zu zweit zusammengelegt – welche zwei, ist gleich,
- * sie passen ohnehin alle untereinander.
+ * Jahreszeiten kommen mit zwei ausgewürfelten Bildern zu je zwei Stück –
+ * siehe `waehleDoppelpaare`.
  */
-function bauePaare() {
+function bauePaare(zufall) {
+  const rnd = zufall || Math.random;
   const paare = [];
   Object.keys(STEIN_ARTEN).forEach((art) => {
     const stein = STEIN_ARTEN[art];
@@ -116,17 +137,20 @@ function bauePaare() {
     paare.push([art, art]);
     paare.push([art, art]);
   });
-  paare.push([BLUMEN[0].art, BLUMEN[1].art]);
-  paare.push([BLUMEN[2].art, BLUMEN[3].art]);
-  paare.push([JAHRESZEITEN[0].art, JAHRESZEITEN[1].art]);
-  paare.push([JAHRESZEITEN[2].art, JAHRESZEITEN[3].art]);
+  waehleDoppelpaare(BLUMEN, rnd).forEach((p) => paare.push(p));
+  waehleDoppelpaare(JAHRESZEITEN, rnd).forEach((p) => paare.push(p));
   return paare;
 }
 
-/** Passen diese zwei Steine zusammen? */
+/**
+ * Passen diese zwei Steine zusammen?
+ *
+ * Gleiches Bild, sonst nichts – auch bei Blumen und Jahreszeiten. Zwei
+ * Steine, die zusammengehören, sehen deshalb immer gleich aus.
+ */
 function passt(a, b) {
   if (!a || !b || a === b) return false;
-  return STEIN_ARTEN[a.art].paar === STEIN_ARTEN[b.art].paar;
+  return a.art === b.art;
 }
 
 /* ---------------------------------------------------------------------
@@ -464,13 +488,13 @@ function erzeugeSpiel(layoutName, zufall) {
   const layout = LAYOUTS[layoutName];
   if (!layout) throw new Error("Unbekannter Aufbau: " + layoutName);
   const plaetze = layoutPositionen(layout);
-  const paare = bauePaare();
+  const rnd = zufall || Math.random;
+  const paare = bauePaare(rnd);
   if (plaetze.length !== paare.length * 2) {
     throw new Error("Aufbau " + layoutName + " hat " + plaetze.length +
                     " Plätze, gebraucht werden " + paare.length * 2);
   }
 
-  const rnd = zufall || Math.random;
   /* Ein Fehlschlag ist bei diesen Aufbauten nicht zu erwarten; falls doch,
      hilft ein neuer Versuch, weil die Auswahl zufällig ist. */
   for (let versuch = 0; versuch < 50; versuch++) {
@@ -500,15 +524,14 @@ function mischeUebrige(steine, zufall) {
   if (liegend.length < 2) return false;
 
   const paare = [];
-  /* Aus den vorhandenen Arten wieder Paare bilden. Gleicher `paar`-Schlüssel
-     heißt: gehört zueinander. Ungerade kann keine Gruppe sein, weil immer
-     nur passende Paare vom Tisch gehen – aber ein stiller Fehlschlag wäre
-     schlimmer als einer, der sich zeigt. */
+  /* Aus den vorhandenen Arten wieder Paare bilden – gleiche Art heißt:
+     gehört zueinander. Ungerade kann keine Art sein, weil immer nur passende
+     Paare vom Tisch gehen – aber ein stiller Fehlschlag wäre schlimmer als
+     einer, der sich zeigt. */
   const nachSchluessel = {};
   liegend.forEach((s) => {
-    const key = STEIN_ARTEN[s.art].paar;
-    if (!nachSchluessel[key]) nachSchluessel[key] = [];
-    nachSchluessel[key].push(s.art);
+    if (!nachSchluessel[s.art]) nachSchluessel[s.art] = [];
+    nachSchluessel[s.art].push(s.art);
   });
   const schluessel = Object.keys(nachSchluessel);
   for (let i = 0; i < schluessel.length; i++) {

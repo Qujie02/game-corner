@@ -108,7 +108,7 @@ function loadStats() {
 }
 
 function saveStats() {
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) { /* egal */ }
 }
 
 function recordGameStarted() {
@@ -155,7 +155,7 @@ function loadSavedGame() {
 }
 
 function clearSavedGame() {
-  localStorage.removeItem(SAVE_KEY);
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* egal */ }
 }
 
 function refreshContinueButton() {

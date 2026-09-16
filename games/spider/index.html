@@ -56,8 +56,8 @@
         </button>
       </div>
 
-      <div id="start-stats">
-        <h2>Statistiken</h2>
+      <details id="start-stats" open>
+        <summary>Statistiken</summary>
         <div class="stats-scope">
           <button type="button" class="stats-scope-btn aktiv" data-scope="zufall">Gemischt</button>
           <button type="button" class="stats-scope-btn" data-scope="loesbar">Lösbar</button>
@@ -74,7 +74,7 @@
           <tbody id="stats-table-body"></tbody>
         </table>
         <button id="stats-reset" type="button">Statistiken zurücksetzen</button>
-      </div>
+      </details>
     </div>
   </div>
 
@@ -90,7 +90,7 @@
           <span class="stat-label">Zeit</span>
           <span class="stat-value" id="timer">00:00</span>
         </div>
-        <div class="stat-chip">
+        <div class="stat-chip" data-chip="modus">
           <span class="stat-label">Modus</span>
           <span class="stat-value" id="difficulty-label">Leicht</span>
         </div>
@@ -107,6 +107,11 @@
           <span class="stat-value" id="stock-count">5</span>
         </div>
       </div>
+
+      <button type="button" id="topbar-toggle" aria-expanded="true"
+              title="Kopfzeile ein- oder ausklappen">
+        <span class="toggle-pfeil" aria-hidden="true">▾</span>
+      </button>
     </header>
 
     <main id="board">
@@ -116,6 +121,10 @@
       <div id="tableau"></div>
       <div id="foundations-rail">
         <div id="foundations"></div>
+        <!-- Dieselbe Auskunft für kleine Schirme: eine Karte je Farbe mit
+             Zähler davor, statt acht Fächern nebeneinander. Welche der zwei
+             Darstellungen zu sehen ist, entscheidet das Stylesheet. -->
+        <div id="foundations-kompakt"></div>
       </div>
     </main>
 

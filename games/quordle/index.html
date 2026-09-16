@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quordle · Game Corner</title>
+<link rel="manifest" href="../../manifest.webmanifest">
+<meta name="theme-color" content="#0a4a2c">
+<link rel="apple-touch-icon" href="../../icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Game Corner">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a class="corner-home" href="../../index.html">
+    <span class="corner-home-pfeil" aria-hidden="true">←</span>
+    <span class="corner-home-text">Game Corner</span>
+  </a>
+
+  <div id="start-screen">
+    <div class="start-card">
+      <div class="start-brand">
+        <span class="brand-mark">▞</span>
+        <h1>Quordle</h1>
+      </div>
+      <p class="start-sub">Vier Wörter auf einmal – jeder Versuch zählt für alle vier</p>
+
+      <p id="tages-zeile" class="tages-zeile"></p>
+
+      <button id="spiel-karte" type="button" class="spiel-karte">
+        <span class="karte-zeichen">▞</span>
+        <span class="karte-text">
+          <span class="karte-titel">Quordle des Tages</span>
+          <span class="karte-sub" id="karte-sub">9 Versuche</span>
+        </span>
+        <span class="karte-punkte" id="karte-punkte"></span>
+      </button>
+
+      <div class="debug-leiste">
+        <button id="neue-raetsel" type="button" class="action-btn">
+          <span class="icon">🎲</span>Neue Rätsel
+        </button>
+        <span class="debug-hinweis">Zum Testen: wirft das Quordle des Tages weg und zieht vier neue Wörter.</span>
+      </div>
+
+      <section class="stats-block">
+        <h2>Statistik</h2>
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Alle</th>
+              <th>Letzte 10</th>
+            </tr>
+          </thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+        <p class="stats-fussnote">Die Zugzahlen zählen nur Partien, in denen alle vier Wörter gefallen sind.</p>
+      </section>
+
+      <details id="rules">
+        <summary>Spielregeln</summary>
+        <ul>
+          <li>Gesucht sind <strong>vier Wörter gleichzeitig</strong>, jedes mit fünf Buchstaben. Neun Versuche gelten für alle vier zusammen.</li>
+          <li>Jeder Versuch wird <strong>in alle vier Felder zugleich</strong> eingetragen und dort einzeln bewertet – ein Buchstabe kann oben links grün sein und unten rechts grau.</li>
+          <li>Ein gelöstes Feld friert ein und nimmt keine weiteren Versuche mehr an. Die übrigen laufen weiter.</li>
+          <li>Nach jedem Versuch färbt sich jeder Buchstabe: <strong class="legende-richtig">grün</strong>, wenn er an dieser Stelle steht, <strong class="legende-dabei">gelb</strong>, wenn er im Wort vorkommt, aber woanders, und <strong class="legende-fehlt">grau</strong>, wenn er gar nicht vorkommt.</li>
+          <li>Jede Taste ist in vier Ecken geteilt – eine je Feld, in derselben Anordnung wie die Felder selbst. So sieht man auf einen Blick, wo ein Buchstabe noch etwas wert ist.</li>
+          <li><strong>Umlaute werden ausgeschrieben</strong>: Ä wird zu AE, Ö zu OE, Ü zu UE. Aus ß wird SS. KÄSE heißt hier also KAESE.</li>
+          <li>Angenommen wird nur, was auf der Wortliste steht. Ein unbekanntes Wort kostet keinen Versuch.</li>
+          <li>Man muss nicht von links nach rechts tippen: <strong>Auf ein Feld klicken</strong> setzt die Schreibmarke auf diese Stelle, die Pfeiltasten verschieben sie.</li>
+          <li>Gewonnen ist erst, wenn alle vier Wörter stehen.</li>
+        </ul>
+      </details>
+
+      <button id="stats-reset" type="button">Statistik zurücksetzen</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <header id="topbar">
+      <button type="button" id="game-title" title="Zur Übersicht dieses Spiels">
+        <span class="brand-mark">▞</span>
+        <h1>Quordle</h1>
+      </button>
+
+      <div id="topbar-rechts">
+        <div id="stats">
+          <div class="stat-chip">
+            <span class="stat-label">Gelöst</span>
+            <span class="stat-value"><span id="geloest-nr">0</span>/<span id="geloest-max">4</span></span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-label">Versuche</span>
+            <span class="stat-value"><span id="versuch-nr">0</span>/<span id="versuch-max">9</span></span>
+          </div>
+        </div>
+        <button id="result-btn" class="action-btn primary hidden" title="Auswertung">
+          <span class="icon">🏆</span><span class="lang">Auswertung</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="spielfeld">
+      <div id="bretter" aria-label="Vier Rateversuche gleichzeitig"></div>
+      <p id="status-text" class="is-empty">&nbsp;</p>
+      <div id="keyboard" aria-label="Buchstabentastatur"></div>
+    </main>
+  </div>
+
+  <div id="end-overlay" class="hidden">
+    <div id="confetti-layer"></div>
+    <div id="end-box">
+      <h2 id="end-title">Geschafft!</h2>
+      <p id="end-text"></p>
+      <div id="end-woerter" class="end-woerter"></div>
+
+      <div class="end-actions">
+        <button id="end-back" class="action-btn">
+          <span class="icon">👁</span>Felder ansehen
+        </button>
+        <button id="end-uebersicht" class="action-btn">
+          <span class="icon">←</span>Übersicht
+        </button>
+      </div>
+
+      <a class="hub-return-link" href="../../index.html">🎮 Zur Startseite</a>
+    </div>
+  </div>
+
+  <script src="../wortraten/woerter.js"></script>
+  <script src="../wortraten/regeln.js"></script>
+  <script src="../wortraten/statistik.js"></script>
+  <script src="../wortraten/eingabe.js"></script>
+  <script src="game.js"></script>
+  <script src="../../pwa.js" defer></script>
+</body>
+</html>

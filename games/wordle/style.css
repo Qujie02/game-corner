@@ -1,0 +1,828 @@
+:root {
+  --felt-1: #0f6b3f;
+  --felt-2: #0a4a2c;
+  --felt-3: #083b23;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --accent: #f2c94c;
+  --ink: #eef3ef;
+  --ink-dim: #b7c7bd;
+  --danger: #e56b6b;
+
+  /* Die drei Befunde.
+
+     Das Grün muss deutlich heller sein als der Filz im Hintergrund, sonst
+     verschwindet ein Treffer im Tisch – dieselbe Farbe wie beim Original
+     wäre hier unsichtbar. Grau bleibt bewusst dunkler als ein leeres Feld:
+     Ein ausgeschiedener Buchstabe soll zurücktreten, nicht auffallen. */
+  --richtig: #3fae5a;
+  --dabei: #d8a92f;
+  --fehlt: #26352d;
+
+  /* Kantenlänge eines Feldes. Den richtigen Wert rechnet game.js aus dem
+     Platz aus, der nach Tastatur und Statuszeile übrig bleibt – acht
+     Zeilen sind viel, und was in Vielfachen der Fensterhöhe geschätzt
+     ist, geht auf flachen Fenstern regelmäßig daneben. Hier steht nur,
+     womit die Seite anfängt, bevor gemessen wurde. */
+  --feld: 48px;
+  --luecke: calc(var(--feld) * 0.11);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  /* Grundfarbe für die ganze Seite, Verlauf nur oben darauf – sonst
+     kachelt der Verlauf auf langen Seiten sichtbar weiter. */
+  background-color: var(--felt-3);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
+    radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+.corner-home {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 15px 0 7px;
+  border-radius: 999px;
+  background: rgba(8, 26, 17, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.corner-home-pfeil {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: rgba(242, 201, 76, 0.16);
+  color: var(--accent);
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.corner-home-text { line-height: 1; }
+
+.corner-home:hover {
+  color: var(--ink);
+  border-color: rgba(242, 201, 76, 0.5);
+  background: rgba(16, 42, 27, 0.92);
+  transform: translateY(-1px);
+}
+
+.corner-home:hover .corner-home-pfeil {
+  background: var(--accent);
+  color: #08160e;
+  transform: translateX(-2px);
+}
+
+#game-title {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 140ms ease;
+}
+
+/* Titel und Rätselwechsel gehören zusammen – "Wordle" und daneben, bei
+   welchem der drei man ist – und stehen deshalb als eine Gruppe mittig. */
+#topbar-mitte {
+  grid-column: 2;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#game-title:hover { background: rgba(255,255,255,0.07); }
+#game-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.brand-mark {
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* ------------------------------------------------------------------
+   Startbildschirm
+   ------------------------------------------------------------------ */
+
+#start-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.start-card {
+  width: 100%;
+  max-width: 660px;
+  text-align: center;
+  background: rgba(6, 22, 14, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 36px 32px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  margin: auto;
+}
+
+.start-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.start-brand .brand-mark { font-size: 2rem; }
+
+.start-brand h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+.start-sub {
+  color: var(--ink-dim);
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+
+.tages-zeile {
+  margin: 0 0 22px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Die drei Rätsel des Tages */
+
+.raetsel-liste {
+  display: grid;
+  gap: 10px;
+}
+
+.raetsel-karte {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease, border-color 140ms ease;
+}
+
+.raetsel-karte:hover { background: rgba(255,255,255,0.13); transform: translateY(-1px); }
+
+.raetsel-zeichen {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.3);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.raetsel-titel { display: block; font-weight: 700; font-size: 1rem; }
+.raetsel-sub { display: block; font-size: 0.78rem; color: var(--ink-dim); margin-top: 3px; }
+
+.raetsel-karte.ist-offen { border-left-color: var(--accent); }
+.raetsel-karte.ist-offen .raetsel-zeichen { color: var(--accent); }
+
+.raetsel-karte.ist-laeuft { border-left-color: var(--accent); background: rgba(242, 201, 76, 0.12); }
+.raetsel-karte.ist-laeuft .raetsel-zeichen { color: var(--accent); }
+
+.raetsel-karte.ist-gewonnen { border-left-color: var(--richtig); }
+.raetsel-karte.ist-gewonnen .raetsel-zeichen { color: var(--richtig); }
+
+.raetsel-karte.ist-verloren { border-left-color: var(--danger); }
+.raetsel-karte.ist-verloren .raetsel-zeichen { color: var(--danger); }
+
+/* Der Knopf zum Durchtesten. Er steht bewusst abgesetzt und unaufgeregt:
+   nützlich, aber nicht das, wofür das Spiel gedacht ist. */
+
+.debug-leiste {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--panel-border);
+}
+
+.debug-hinweis {
+  font-size: 0.74rem;
+  color: var(--ink-dim);
+  text-align: left;
+  max-width: 300px;
+}
+
+/* Statistik */
+
+.stats-block { margin-top: 26px; text-align: left; }
+
+.stats-block h2 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  font-weight: 700;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.stats-table th, .stats-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--panel-border);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table thead th { color: var(--ink-dim); font-weight: 600; font-size: 0.72rem; }
+.stats-table .stat-row-label { text-align: left; color: var(--ink-dim); font-weight: 600; }
+
+.stats-fussnote {
+  margin: 8px 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+
+#rules {
+  margin-top: 22px;
+  text-align: left;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.18);
+}
+
+#rules summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  list-style: none;
+}
+
+#rules summary::-webkit-details-marker { display: none; }
+#rules summary::before { content: "▸ "; color: var(--accent); }
+#rules[open] summary::before { content: "▾ "; }
+
+#rules ul {
+  margin: 12px 0 4px;
+  padding-left: 20px;
+  color: var(--ink-dim);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.legende-richtig { color: var(--richtig); }
+.legende-dabei { color: var(--accent); }
+.legende-fehlt { color: #8ea297; }
+
+#stats-reset {
+  margin-top: 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+#stats-reset:hover { background: rgba(255,255,255,0.08); color: var(--ink); }
+
+/* ------------------------------------------------------------------
+   Spielbildschirm
+   ------------------------------------------------------------------ */
+
+#game-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(6, 22, 14, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 12px 22px;
+  display: grid;
+  /* Seitenspalten mindestens so breit wie der Zurück-Knopf, damit Titel
+     und Rätselwechsel mittig stehen und nicht unter der festsitzenden
+     Schaltfläche "Game Corner" verschwinden – wie in den übrigen Spielen. */
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 16px;
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+#game-title .brand-mark { font-size: 1.4rem; }
+
+#topbar h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#raetsel-wechsel {
+  display: flex;
+  gap: 8px;
+}
+
+.wechsel-knopf {
+  width: 38px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0,0,0,0.28);
+  color: var(--ink-dim);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.wechsel-knopf:hover { background: rgba(255,255,255,0.12); color: var(--ink); }
+.wechsel-knopf.ist-gewonnen { border-color: var(--richtig); color: var(--richtig); }
+.wechsel-knopf.ist-verloren { border-color: var(--danger); color: var(--danger); }
+
+.wechsel-knopf.aktiv {
+  background: var(--accent);
+  border-color: transparent;
+  color: #241a04;
+}
+
+/* Zähler und Auswertung sitzen zusammen rechts in der Kopfzeile. Die
+   Auswertung stand früher in einer Fußzeile; die kostete eine ganze
+   Leiste Höhe für einen Knopf, den man selten braucht. */
+#topbar-rechts {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#stats { display: flex; gap: 10px; }
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--panel-border);
+  min-width: 78px;
+}
+
+.stat-label {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-dim);
+}
+
+.stat-value { font-size: 0.98rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+#spielfeld {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ------------------------------------------------------------------
+   Das Feld
+   ------------------------------------------------------------------ */
+
+#board {
+  display: grid;
+  gap: var(--luecke);
+  /* Die Felder drehen sich um ihre waagerechte Achse; ohne Perspektive
+     wäre das nur ein Zusammenschieben. */
+  perspective: 900px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.zeile {
+  display: grid;
+  grid-template-columns: repeat(5, var(--feld));
+  gap: var(--luecke);
+}
+
+.feld {
+  /* Ohne das legt der Browser auf Berührgeräten eine Wartezeit vor jeden
+     Tipp und zoomt beim schnellen Doppeltipp hinein – beides stört, wo
+     zügig hintereinander getippt wird. */
+  touch-action: manipulation;
+  display: grid;
+  place-items: center;
+  width: var(--feld);
+  height: var(--feld);
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(4, 18, 11, 0.35);
+  font-size: calc(var(--feld) * 0.52);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  /* Die Großbuchstaben sitzen in ihrer Zeilenbox etwas zu tief. */
+  transform: translateY(-0.02em);
+}
+
+/* Die Zeile, die gerade getippt wird */
+
+.feld.ist-aktiv {
+  border-color: rgba(255,255,255,0.28);
+  cursor: pointer;
+}
+
+.feld.ist-gefuellt { border-color: rgba(255,255,255,0.55); }
+
+/* Die Schreibmarke. Kein blinkender Strich, sondern das ganze Feld –
+   auf dem Telefon wäre ein Strich zu leicht zu übersehen. */
+.feld.ist-marke {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(242, 201, 76, 0.25);
+}
+
+.feld.ist-aktiv:hover { border-color: rgba(242, 201, 76, 0.6); }
+
+/* Die Befunde */
+
+.feld.ist-richtig { background: var(--richtig); border-color: var(--richtig); color: #072d15; }
+.feld.ist-dabei { background: var(--dabei); border-color: var(--dabei); color: #2a1f03; }
+.feld.ist-fehlt { background: var(--fehlt); border-color: var(--fehlt); color: #8ea297; }
+
+/* Die Drehung beim Aufdecken. Die Dauer steht auch in game.js: Die Farbe
+   wird nach der halben Drehung gesetzt, wenn das Feld auf der Kante steht. */
+.feld.dreht { animation: dreh 480ms ease; }
+
+@keyframes dreh {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Ein zurückgewiesenes Wort. Die Meldung allein übersieht man leicht. */
+.zeile.ruettelt { animation: ruettel 560ms ease; }
+
+@keyframes ruettel {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feld.dreht, .zeile.ruettelt { animation: none; }
+}
+
+/* ------------------------------------------------------------------
+   Meldungen und Tastatur
+   ------------------------------------------------------------------ */
+
+/* Die Zeile behält ihren Platz, auch wenn sie leer ist – sonst springt
+   das Feld beim Ein- und Ausblenden. */
+#status-text {
+  margin: 0;
+  max-width: 520px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: rgba(6, 22, 14, 0.8);
+  border: 1px solid var(--panel-border);
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  text-align: center;
+  min-height: 2.2em;
+  transition: opacity 180ms ease;
+}
+
+#status-text.is-empty { opacity: 0; }
+#status-text.ist-gut { color: var(--richtig); border-color: rgba(63, 174, 90, 0.5); }
+#status-text.ist-hinweis { color: var(--accent); border-color: rgba(242, 201, 76, 0.45); }
+
+#keyboard {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  max-width: 500px;
+  transition: opacity 180ms ease;
+}
+
+#keyboard.ist-aus { opacity: 0.45; pointer-events: none; }
+
+.tasten-zeile {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.taste {
+  /* Ohne das legt der Browser auf Berührgeräten eine Wartezeit vor jeden
+     Tipp und zoomt beim schnellen Doppeltipp hinein – beides stört, wo
+     zügig hintereinander getippt wird. */
+  touch-action: manipulation;
+  flex: 1 1 0;
+  min-width: 0;
+  height: clamp(36px, 5.4vh, 48px);
+  border-radius: 7px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.1);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.taste:hover { background: rgba(255,255,255,0.2); }
+.taste:active { transform: translateY(1px); }
+
+/* Eingabe und Rücktaste brauchen mehr Platz als ein Buchstabe. */
+.taste.breit { flex: 1.7 1 0; font-size: 0.78rem; }
+
+.taste .kurz { display: none; }
+
+.taste.ist-richtig { background: var(--richtig); border-color: var(--richtig); color: #072d15; }
+.taste.ist-dabei { background: var(--dabei); border-color: var(--dabei); color: #2a1f03; }
+.taste.ist-fehlt { background: var(--fehlt); border-color: var(--fehlt); color: #7b8f84; }
+
+/* ------------------------------------------------------------------
+   Schaltflächen
+   ------------------------------------------------------------------ */
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+
+.action-btn.primary {
+  background: var(--accent);
+  color: #241a04;
+  border-color: transparent;
+}
+
+.action-btn.primary:hover { filter: brightness(1.1); }
+.action-btn .icon { font-size: 0.95rem; }
+
+/* ------------------------------------------------------------------
+   Auswertung
+   ------------------------------------------------------------------ */
+
+#end-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(3, 12, 7, 0.76);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0.15; }
+}
+
+#end-box {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  background: rgba(9, 32, 20, 0.97);
+  border: 1px solid var(--panel-border);
+  border-top: 3px solid var(--accent);
+  border-radius: 18px;
+  padding: 32px 34px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+#end-box h2 { margin: 0 0 10px; font-size: 1.5rem; }
+#end-text { color: var(--ink-dim); margin: 0 0 6px; font-size: 0.95rem; }
+
+#end-wort {
+  margin: 0 0 22px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+#end-back { margin-bottom: 20px; }
+
+.end-label {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.end-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.end-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.end-mode-btn {
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease;
+}
+
+.end-mode-btn:hover { background: var(--accent); color: #241a04; transform: translateY(-2px); }
+
+/* Ein bereits beendetes Rätsel bleibt anklickbar – man will oft noch
+   einmal aufs Feld sehen –, tritt aber zurück. */
+.end-mode-btn.ist-fertig { opacity: 0.55; }
+
+.hub-return-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.hub-return-link:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------------
+   Kleine Bildschirme
+   ------------------------------------------------------------------ */
+
+@media (max-width: 720px) {
+  #start-screen { padding: 68px 16px 24px; }
+  .start-card { padding: 28px 20px; }
+  .debug-hinweis { max-width: none; text-align: center; }
+
+  #topbar {
+    padding: 56px 14px 10px;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+  /* Unter dem Game-Corner-Knopf ist wieder Platz: Der Titel darf nach
+     links, und der Rätselwechsel rutscht in die zweite Reihe – drei
+     Knöpfe neben Titel und Zähler wären zu eng. */
+  #topbar-mitte {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    justify-self: start;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  #game-title { padding: 2px 8px; gap: 7px; }
+  #topbar-rechts { grid-column: 2; grid-row: 1; justify-self: end; }
+
+  #spielfeld { padding: 10px 8px; gap: 9px; }
+  /* Neben den Zählern bleibt kein Platz für das Wort. */
+  #result-btn .lang { display: none; }
+  #result-btn { padding: 9px 12px; }
+
+  .taste { font-size: 0.82rem; }
+  /* Das Wort "Eingabe" passt hier nicht mehr in die Taste. */
+  .taste .lang { display: none; }
+  .taste .kurz { display: inline; font-size: 1.15rem; }
+}
+
+/* ------------------------------------------------------------------
+   Trefferflächen auf dem Telefon
+
+   Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man
+   Schaltflächen nicht mehr zuverlässig, und knapp danebenzutippen ist
+   ärgerlicher als ein paar Pixel mehr Rand. Der Block steht am Ende und
+   hebt nur Höhen an – Aussehen, Farben und Anordnung bleiben, wie sie
+   das jeweilige Spiel gesetzt hat.
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  /* Der Weg zur Übersicht wird von allen Knöpfen am häufigsten gebraucht
+     und war mit 33 mal 30 Pixeln der kleinste. */
+  .corner-home {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Aufklappzeilen sind reine Textzeilen und damit nur so hoch wie die
+     Schrift – ein paar Pixel Luft machen sie treffbar. */
+  summary { padding-top: 8px; padding-bottom: 8px; }
+
+  #stats-reset { padding-top: 10px; padding-bottom: 10px; }
+  .stats-scope-btn { min-height: 36px; }
+}

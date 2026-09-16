@@ -20,9 +20,19 @@ body {
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background:
+  /* Die Grundfarbe trägt die ganze Seite, der Verlauf liegt nur oben darauf.
+
+     Beides ist nötig: `html` und `body` sind genau fensterhoch, und ein
+     Hintergrund ohne `no-repeat` kachelt darunter weiter – bei einer Seite,
+     die länger ist als das Fenster, sieht man die Wiederholung als harte
+     Kante quer über den Schirm. Ohne Grundfarbe wiederum bliebe unterhalb
+     des Verlaufs nichts übrig. Der Verlauf endet unten ohnehin in --felt-3,
+     deshalb geht er nahtlos in die Fläche über. */
+  background-color: var(--felt-3);
+  background-image:
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
     radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: no-repeat;
   display: flex;
   /* Automatische Ränder statt zentrierter Ausrichtung: Ist der Inhalt höher
      als das Fenster, bliebe bei "align-items: center" der obere Teil
@@ -101,6 +111,39 @@ body {
   font-size: 2.6rem;
   line-height: 1;
 }
+
+/* Wordle und Quordle bekommen statt eines Zeichens ihr eigenes Wahrzeichen:
+   das Raster aus gefärbten Kästchen. Ein Emoji gibt es dafür nicht, und
+   ein beliebiges Symbol hätte nichts mit dem Spiel zu tun.
+
+   Die Farben sind dieselben wie im Spiel. Sie stehen hier fest und nicht
+   als Variable, weil die Kacheln beim Überfahren gelb werden – ein Gelb
+   auf Gelb wäre weg, deshalb bekommt jedes Kästchen eine dunkle Kante. */
+.raster {
+  display: grid;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.raster i {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.raster-wordle { grid-template-columns: repeat(3, 14px); }
+
+/* Vier Kästchen für vier gleichzeitige Wörter, in derselben Anordnung
+   wie die Felder im Spiel. */
+.raster-quordle { grid-template-columns: repeat(2, 18px); }
+.raster-quordle i { width: 18px; height: 18px; }
+
+.raster i.ist-richtig { background: #3fae5a; }
+.raster i.ist-dabei { background: #d8a92f; }
+.raster i.ist-fehlt { background: #3a4f44; }
 
 .tile-title {
   font-size: 1.05rem;

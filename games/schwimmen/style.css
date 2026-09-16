@@ -23,9 +23,19 @@ body {
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background:
+  /* Die Grundfarbe trägt die ganze Seite, der Verlauf liegt nur oben darauf.
+
+     Beides ist nötig: `html` und `body` sind genau fensterhoch, und ein
+     Hintergrund ohne `no-repeat` kachelt darunter weiter – bei einer Seite,
+     die länger ist als das Fenster, sieht man die Wiederholung als harte
+     Kante quer über den Schirm. Ohne Grundfarbe wiederum bliebe unterhalb
+     des Verlaufs nichts übrig. Der Verlauf endet unten ohnehin in --felt-3,
+     deshalb geht er nahtlos in die Fläche über. */
+  background-color: var(--felt-3);
+  background-image:
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
     radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: no-repeat;
 }
 
 .hidden { display: none !important; }
@@ -1072,4 +1082,30 @@ body {
   #event-log {
     display: none;
   }
+}
+
+/* ------------------------------------------------------------------
+   Trefferflächen auf dem Telefon
+
+   Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man
+   Schaltflächen nicht mehr zuverlässig, und knapp danebenzutippen ist
+   ärgerlicher als ein paar Pixel mehr Rand. Der Block steht am Ende und
+   hebt nur Höhen an – Aussehen, Farben und Anordnung bleiben, wie sie
+   das jeweilige Spiel gesetzt hat.
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  /* Der Weg zur Übersicht wird von allen Knöpfen am häufigsten gebraucht
+     und war mit 33 mal 30 Pixeln der kleinste. */
+  .corner-home {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Aufklappzeilen sind reine Textzeilen und damit nur so hoch wie die
+     Schrift – ein paar Pixel Luft machen sie treffbar. */
+  summary { padding-top: 8px; padding-bottom: 8px; }
+
+  #stats-reset { padding-top: 10px; padding-bottom: 10px; }
+  .stats-scope-btn { min-height: 36px; }
 }

@@ -19,6 +19,8 @@ const SPIELE = [
   { name: "Starstruck", schluessel: "starstruckStats", form: "modi" },
   { name: "Mahjong", schluessel: "mahjongStats", form: "modi" },
   { name: "FreeCell", schluessel: "freecellStats", form: "modi" },
+  { name: "Wordle", schluessel: "wordleStats", form: "modi" },
+  { name: "Quordle", schluessel: "quordleStats", form: "modi" },
 ];
 
 function lies(schluessel) {

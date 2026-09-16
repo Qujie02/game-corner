@@ -1,7 +1,7 @@
 :root {
-  --felt-1: #0f6b3f;
-  --felt-2: #0a4a2c;
-  --felt-3: #083b23;
+  --felt-1: #146843;
+  --felt-2: #0a462c;
+  --felt-3: #063321;
   --panel-bg: rgba(10, 30, 20, 0.55);
   --panel-border: rgba(255, 255, 255, 0.09);
   --accent: #f2c94c;
@@ -15,8 +15,41 @@
   --stein-h: 62px;
   /* Wie weit eine Ebene gegen die darunter versetzt ist. Daraus entsteht der
      Eindruck von Höhe – ohne Versatz sähe ein Turm aus wie ein Stein. */
-  --ebene-dx: 6px;
-  --ebene-dy: 6px;
+  --ebene-dx: 5.3px;
+  --ebene-dy: 5.3px;
+  /* Eine Rundung für alles am Stein: Oberseite, Motivfeld und die Fächer der
+     Vorratsleiste. Auch dieser Wert kommt zur Laufzeit aus game.js, denn der
+     Umriss des Steinkörpers wird damit gerechnet. */
+  --stein-radius: 5.5px;
+
+  /* ---- Das Material eines Steins ----
+
+     Echte Mahjongsteine sind aus Bein oder Kunstharz: warmes Elfenbein, kein
+     Papierweiß. Der Unterschied klingt nach Kleinigkeit, macht auf grünem
+     Filz aber aus einem Haufen Spielkarten einen Haufen Steine – Weiß wirkt
+     dort gedruckt, Elfenbein wirkt massiv.
+
+     Licht fällt von links oben. Daraus folgt die Ordnung der Töne: Oberseite
+     am hellsten, die nach vorn zeigende Wand mittel, die rechte Wand am
+     dunkelsten. Werden beide Wände im selben Ton gezeichnet, verschwindet
+     die Kante zwischen ihnen – und mit ihr der Eindruck einer Form, die eine
+     Dicke hat. */
+  --stein-face-1: #fffdf7;
+  --stein-face-2: #faf6ea;
+  --stein-face-3: #f0ebda;
+  /* Das Motivfeld liegt leicht vertieft in der Oberseite – wie die
+     eingravierte Fläche eines echten Steins. */
+  --stein-feld-1: #fdfbf2;
+  --stein-feld-2: #f6f2e3;
+  /* Vorderwand (zeigt nach unten): von links nach rechts leicht abfallend.
+     Deutlich dunkler als die Oberseite – liegen beide dicht beieinander,
+     franst der Stein nach unten aus, statt eine Kante zu haben. */
+  --stein-wand-1: #e0d9c2;
+  --stein-wand-2: #cec6ad;
+  /* Rechte Wand – nochmals dunkler, sonst verschwindet die Kante dazwischen,
+     und zugleich das, was einen Stein von seinem rechten Nachbarn trennt. */
+  --stein-kante-1: #bcb49a;
+  --stein-kante-2: #a29a82;
 
   /* Schrift für die chinesischen Zeichen. Nicht jede Schrift hat sie; ohne
      diese Liste stehen auf halben Steinen leere Kästchen. */
@@ -36,9 +69,34 @@ body {
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background:
+  /* Die Grundfarbe trägt die ganze Seite, der Verlauf liegt nur oben darauf.
+
+     Beides ist nötig: `html` und `body` sind genau fensterhoch, und ein
+     Hintergrund ohne `no-repeat` kachelt darunter weiter – bei einer Seite,
+     die länger ist als das Fenster, sieht man die Wiederholung als harte
+     Kante quer über den Schirm. Ohne Grundfarbe wiederum bliebe unterhalb
+     des Verlaufs nichts übrig. Der Verlauf endet unten ohnehin in --felt-3,
+     deshalb geht er nahtlos in die Fläche über. */
+  background-color: var(--felt-3);
+  /* Fünf Ebenen, von oben nach unten:
+
+     1./2. Filzstruktur – zwei feine Karos gegeneinander. Einzeln ist nichts
+     davon zu sehen; zusammen nehmen sie der Fläche das Plakathafte, und die
+     hellen Steine liegen darauf, statt darin zu schwimmen. Nur diese beiden
+     Ebenen kacheln, und das sollen sie auch: Eine Struktur mit 3 Pixeln
+     Raster hat keine sichtbare Nahtstelle.
+
+     3. Ein dunkler Rand zum Bildrand hin, der den Blick in die Mitte zieht.
+     4./5. Lichtkegel und Grundverlauf wie zuvor. */
+  background-image:
+    repeating-linear-gradient(45deg,
+      rgba(255,255,255,0.022) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg,
+      rgba(0,0,0,0.04) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse 105% 85% at 50% 45%, transparent 45%, rgba(0,0,0,0.3) 100%),
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
     radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat;
 }
 
 .hidden { display: none !important; }
@@ -252,7 +310,7 @@ body {
 
 .layout-vorschau i {
   position: absolute;
-  background: linear-gradient(150deg, #ffffff 0%, #f2f5f2 55%, #d5dcd7 100%);
+  background: linear-gradient(150deg, #fffdf7 0%, #f7f2e4 55%, #ddd5c0 100%);
   border-radius: 1.5px;
   box-shadow: 0 0 0 0.5px rgba(0,0,0,0.4), 0.5px 0.5px 0 0.5px rgba(0,0,0,0.25);
 }
@@ -274,14 +332,38 @@ body {
   border-top: 1px solid var(--panel-border);
 }
 
-#start-stats h2 {
+/* Die Überschrift ist zugleich der Klappgriff: Auf dem Telefon fängt die
+   Statistik zugeklappt an, weil sie sonst den halben Startbildschirm
+   füllt, bevor man überhaupt spielen kann. Am Rechner bleibt sie offen –
+   dort ist der Platz da. Zugeklappt wird in game.js. */
+#start-stats summary {
   margin: 0 0 14px;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  cursor: pointer;
+  list-style: none;
 }
+
+#start-stats summary::-webkit-details-marker { display: none; }
+
+/* Das Dreieck zeigt, dass hier etwas auf- und zugeht – ohne Marker sieht
+   die Zeile sonst aus wie eine gewöhnliche Überschrift. */
+#start-stats summary::after {
+  content: " ▾";
+  color: var(--accent);
+}
+
+#start-stats:not([open]) summary {
+  margin-bottom: 0;
+}
+
+#start-stats:not([open]) summary::after { content: " ▸"; }
+
+#start-stats summary:hover { color: var(--ink); }
+#start-stats summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .stats-scope {
   display: flex;
@@ -471,14 +553,15 @@ body {
 /* ---------- Steine ---------- */
 
 /*
-   Ein Stein ist ein Quader, gezeichnet aus zwei Teilen: der Oberseite und
-   dem Körper, der um die Steindicke nach rechts unten darüber hinausragt.
+   Ein Stein ist ein flaches Plättchen, gezeichnet aus zwei Teilen: der
+   Oberseite und dem Körper, der um die Steindicke nach rechts unten darüber
+   hinausragt.
 
    Weil höhere Ebenen nach links oben verschoben werden, schaut man schräg
-   von links oben auf den Stapel. Von einem Quader sind dann genau zwei
-   Seitenwände zu sehen: die rechte und die untere. Oben und links liegt die
-   Oberseite deshalb bündig auf dem Körper – ein Rand auf allen vier Seiten
-   wäre ein Stein, den man von überall gleichzeitig sieht.
+   von links oben auf den Stapel. Zu sehen sind dann genau zwei Seitenwände:
+   die rechte und die untere. Oben und links liegt die Oberseite deshalb
+   bündig auf dem Körper – ein Rand auf allen vier Seiten wäre ein Stein, den
+   man von überall gleichzeitig sieht.
 
    Die Steindicke ist derselbe Wert wie der Ebenenversatz (siehe game.js).
    Damit deckt der Körper eines Steins genau die Oberseite dessen ab, auf dem
@@ -498,6 +581,10 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* Ohne das legt der Browser auf Berührgeräten eine Wartezeit vor jeden
+     Tipp und zoomt beim schnellen Doppeltipp hinein – beides stört, wo
+     zügig ein Stein nach dem anderen angetippt wird. */
+  touch-action: manipulation;
   cursor: default;
   transition: transform 140ms var(--ease-move), filter 160ms ease,
               opacity var(--dur-weg) ease;
@@ -505,85 +592,101 @@ body {
 
 /* Körper: die zwei sichtbaren Seitenwände, rechts und unten.
 
-   Ein Quader, schräg von links oben gesehen, hat keine rechteckige
-   Silhouette, sondern eine sechseckige: Oberseite und Grundfläche sind
-   gegeneinander verschoben, und ihre Umrisse verbinden sich an zwei Ecken
-   schräg. Oben rechts und unten links ist deshalb nichts – wer dort Wand
-   zeichnet, zeigt eine Seite, die von hier aus gar nicht zu sehen ist.
+   Ein Plättchen, schräg von links oben gesehen, hat keine rechteckige
+   Silhouette: Oberseite und Grundfläche sind gegeneinander verschoben, und
+   ihre Umrisse verbinden sich oben rechts und unten links über je eine
+   Schräge. Wer dort statt der Schräge Wand zeichnet, zeigt eine Seite, die
+   von hier aus gar nicht zu sehen ist.
 
-   Der Umriss wird mit `clip-path` beschnitten. Weil ein beschnittenes
-   Element auch seinen Schlagschatten verliert, kommt der über `filter`:
-   Der folgt der zugeschnittenen Form. */
+   Beschnitten wird mit einem Pfad, nicht mit einem Polygon. Der Grund sind
+   genau diese beiden Schrägen: Sie müssen die Rundung der Oberseite
+   berühren, nicht in einer Ecke ansetzen, die es dort gar nicht gibt –
+   sonst schneidet die Kante in die Tiefe sichtbar in die Oberseite. Polygone
+   können keine Rundungen; `steinPfade` in game.js rechnet die Pfade deshalb
+   aus und legt ihn in --stein-umriss ab. Der Ersatzwert hier greift nur,
+   solange noch nicht gerechnet wurde, und lässt den Stein ungeschnitten.
+
+   Weil ein beschnittenes Element auch seinen Schlagschatten verliert, kommt
+   der über `filter`: Der folgt der zugeschnittenen Form. */
 .stein::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: calc(var(--stein-w) * 0.12);
-  /* Die Vorderwand – die Fläche, die nach unten zeigt. Sie ist der ganzen
-     Silhouette unterlegt; zu sehen ist von ihr nur der Streifen unter der
-     Oberseite, den Rest verdecken Oberseite und rechte Wand. */
-  background: linear-gradient(100deg, #dee5e0 0%, #d5ded8 60%, #cbd4ce 100%);
-  box-shadow: inset 0 0 0 1px rgba(30,48,40,0.36);
-  clip-path: polygon(
-    0 0,
-    calc(100% - var(--ebene-dx)) 0,
-    100% var(--ebene-dy),
-    100% 100%,
-    var(--ebene-dx) 100%,
-    0 calc(100% - var(--ebene-dy)));
+  clip-path: path(var(--stein-umriss, "M0,0 H999 V999 H0 Z"));
+  /* Die Vorderwand, die nach unten zeigt. Sie ist der ganzen Silhouette
+     unterlegt; zu sehen ist von ihr nur der Streifen unter der Oberseite,
+     den Rest verdecken Oberseite und rechte Wand. */
+  background: linear-gradient(100deg, var(--stein-wand-1), var(--stein-wand-2));
   /* Zwei Schatten: ein enger, der den Stein von allem trennt, was hinter ihm
      liegt, und ein gerichteter nach rechts unten, der mit der Ebene wächst –
      ein Stein in der fünften Lage liegt vier Steindicken über dem Tisch und
      wirft entsprechend weiter. */
   filter:
-    drop-shadow(0 0 calc(var(--ebene-dy) * 0.3) rgba(18,36,28,0.55))
-    drop-shadow(calc(var(--ebene-dx) * (0.2 + 0.15 * var(--z)))
-                calc(var(--ebene-dy) * (0.35 + 0.3 * var(--z)))
-                calc(var(--ebene-dy) * (0.5 + 0.4 * var(--z))) rgba(0,0,0,0.4));
+    drop-shadow(0 0 calc(var(--ebene-dy) * 0.3) rgba(8,24,15,0.5))
+    drop-shadow(calc(var(--ebene-dx) * (0.16 + 0.16 * var(--z)))
+                calc(var(--ebene-dy) * (0.36 + 0.32 * var(--z)))
+                calc(var(--ebene-dy) * (0.6 + 0.5 * var(--z))) rgba(2,12,7,0.36));
 }
 
-/* Rechte Seitenwand: eine eigene Fläche, dunkler als die Vorderwand, mit
-   scharfer Kante dazwischen.
+/* Rechte Seitenwand: eine eigene Fläche, dunkler als die Vorderwand.
 
-   Zwei Wände in einem gemeinsamen Verlauf zu zeichnen ergibt eine
-   abgerundete Fase, keinen Quader: Ein Quader zeigt ebene Flächen, die sich
-   an einer Kante treffen, und jede Fläche hat ihren eigenen Ton – daran
-   erkennt das Auge die Form. */
+   Beide Wände in einem Verlauf zu zeichnen ergibt eine runde Fase, keine
+   Form mit Dicke: Zwei ebene Flächen treffen sich an einer Kante, und jede
+   hat ihren eigenen Ton – daran erkennt das Auge, dass da etwas Dickes
+   liegt. Wo die Wände sich treffen, rechnet `steinPfade` in game.js aus. */
 .stein::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(170deg, #b8c2bb 0%, #adb8b1 70%, #a4afa8 100%);
-  clip-path: polygon(
-    calc(100% - var(--ebene-dx)) 0,
-    100% var(--ebene-dy),
-    100% 100%,
-    calc(100% - var(--ebene-dx)) calc(100% - var(--ebene-dy)));
+  clip-path: path(var(--stein-wandumriss, "M0,0 Z"));
+  background: linear-gradient(168deg, var(--stein-kante-1), var(--stein-kante-2));
   pointer-events: none;
 }
 
-/* Oberseite: das helle Feld, auf dem das Motiv sitzt. */
+/* Oberseite: die Elfenbeinfläche, in der das Motivfeld sitzt. */
 .stein-face {
   position: absolute;
   left: 0;
   top: 0;
   width: var(--stein-w);
   height: var(--stein-h);
-  border-radius: calc(var(--stein-w) * 0.12);
-  background: linear-gradient(158deg, #ffffff 0%, #fdfefd 42%, #f3f7f4 100%);
+  border-radius: var(--stein-radius);
+  background: linear-gradient(155deg,
+    var(--stein-face-1) 0%, var(--stein-face-2) 46%, var(--stein-face-3) 100%);
   /* Die feine dunkle Linie ums Feld gehört zum Bild eines Mahjongsteins –
      sie trennt die Oberseite vom Bein und die Steine voneinander. Der
      Schlagschatten nach rechts unten setzt das Feld vom Körper ab; ohne ihn
      liegt es in der Fläche und der Stein sieht bedruckt aus. */
   box-shadow:
-    inset 0 0 0 1px rgba(36,58,48,0.42),
-    inset 0 1px 0 rgba(255,255,255,0.95),
-    inset 0 calc(var(--ebene-dy) * -0.25) calc(var(--ebene-dy) * 0.7) rgba(90,110,98,0.16),
-    1px 2px 3px rgba(24,40,30,0.34);
+    inset 0 0 0 1px rgba(44,54,36,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.92),
+    inset calc(var(--ebene-dx) * -0.2) calc(var(--ebene-dy) * -0.22)
+          calc(var(--ebene-dy) * 0.8) rgba(126,118,88,0.2),
+    1px 2px 3px rgba(16,32,22,0.3);
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+/* Das Motivfeld: eine flach eingelassene Fläche in der Oberseite.
+
+   Auf einem echten Stein ist das Zeichen in den Grund geschnitten, und der
+   Rand der Vertiefung fängt das Licht anders als die Fläche ringsum. Genau
+   das macht dieser Absatz – heller Grund, ein Hauch Schatten an der oberen
+   Kante, eine helle Linie an der unteren. Nebenbei bekommen 144 Motive damit
+   denselben Rahmen: Ein gezeichneter Vogel und ein geschriebenes 東 sitzen
+   unterschiedlich im Stein, mit Feld sitzen sie gleich. */
+.stein-inlay {
+  position: absolute;
+  inset: calc(var(--stein-w) * 0.075);
+  border-radius: calc(var(--stein-w) * 0.06);
+  background: linear-gradient(160deg, var(--stein-feld-1), var(--stein-feld-2));
+  box-shadow:
+    inset 0 calc(var(--stein-h) * 0.015) calc(var(--stein-h) * 0.04) rgba(108,100,72,0.3),
+    inset 0 -1px 0 rgba(255,255,255,0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 160ms ease, box-shadow 160ms ease;
+  overflow: hidden;
+  transition: background 160ms ease;
 }
 
 /* Glanz: Licht von links oben. Liegt über dem Motiv, deshalb sehr dünn – er
@@ -593,17 +696,21 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(148deg,
-    rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.3) 16%,
-    rgba(255,255,255,0) 38%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(146deg,
+    rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.16) 7%,
+    rgba(255,255,255,0) 20%, rgba(255,255,255,0) 100%);
   pointer-events: none;
 }
 
 /* Freie Steine liegen im Licht, verbaute bleiben zurück. Ohne diesen
    Unterschied sucht man bei 144 Steinen ständig, was überhaupt geht –
    abschalten lässt es sich trotzdem, wer mag, sucht selbst. */
+/* Gedämpft, nicht ausgegraut. Der Unterschied zu einem freien Stein entsteht
+   vor allem daraus, dass der freie hell ist – der verbaute muss dafür nicht
+   grau werden, und ein Brett aus 120 grauen Steinen sieht aus, als wäre es
+   abgeschaltet. */
 #brett.nur-frei .stein.verbaut {
-  filter: brightness(0.76) saturate(0.5) contrast(0.9);
+  filter: brightness(0.88) saturate(0.72) contrast(0.97);
 }
 
 .stein.frei { cursor: pointer; }
@@ -611,47 +718,67 @@ body {
 .stein.frei:hover { transform: translate(-2px, -3px); }
 
 .stein.frei:hover .stein-face {
-  background: linear-gradient(158deg, #ffffff 0%, #ffffff 45%, #f9fcfa 100%);
+  background: linear-gradient(155deg, #fffefa 0%, #fffdf5 46%, #f8f4e8 100%);
 }
 
 .stein.frei:hover::before {
   filter:
-    drop-shadow(0 calc(var(--ebene-dy) * (0.8 + 0.3 * var(--z)))
-                  calc(var(--ebene-dy) * (1 + 0.4 * var(--z))) rgba(0,0,0,0.5));
+    drop-shadow(0 0 calc(var(--ebene-dy) * 0.24) rgba(8,24,15,0.5))
+    drop-shadow(calc(var(--ebene-dx) * (0.2 + 0.13 * var(--z)))
+                calc(var(--ebene-dy) * (0.7 + 0.26 * var(--z)))
+                calc(var(--ebene-dy) * (0.95 + 0.4 * var(--z))) rgba(2,12,7,0.45));
 }
 
 .stein.gewaehlt { transform: translate(-3px, -4px); }
 
+/* Ausgewählt: Der Stein bleibt Elfenbein, nur wärmer, und bekommt einen
+   goldenen Rand. Ihn ganz umzufärben hieße, das Motiv mit einzufärben –
+   und ein Stein, den man gerade zuordnen will, ist der letzte, dessen Farben
+   man verstellen sollte. */
 .stein.gewaehlt::before {
-  background: linear-gradient(135deg,
-    #fffcec 0%, #f9eec4 24%, #eddfa0 50%, #d6c47e 76%, #b8a55f 100%);
+  background: linear-gradient(100deg, #f2e5ba, #e6d7a2);
+}
+
+.stein.gewaehlt::after {
+  background: linear-gradient(168deg, #cdb97e, #b5a068);
 }
 
 .stein.gewaehlt .stein-face {
-  background: linear-gradient(158deg, #fffef6 0%, #fdf6d8 55%, #f7ebb6 100%);
   box-shadow:
     inset 0 0 0 2px var(--accent),
     inset 0 1px 0 rgba(255,255,255,0.9),
-    1px 2px 3px rgba(24,40,30,0.36);
+    0 0 0 1px rgba(242,201,76,0.35),
+    1px 2px 4px rgba(16,32,22,0.34);
+}
+
+.stein.gewaehlt .stein-inlay {
+  background: linear-gradient(160deg, #fffdf2, #fdf5dc);
 }
 
 .stein.hinweis .stein-face { animation: hinweis-puls 1.05s ease-in-out infinite; }
 
 @keyframes hinweis-puls {
   0%, 100% {
-    box-shadow: inset 0 0 0 2px rgba(242,201,76,0.4), 0 1px 2px rgba(74,62,36,0.4);
+    box-shadow:
+      inset 0 0 0 1px rgba(48,58,40,0.26),
+      inset 0 1px 0 rgba(255,255,255,0.92),
+      0 0 0 2px rgba(242,201,76,0.35);
   }
   50% {
-    box-shadow: inset 0 0 0 3px var(--accent), 0 0 9px 2px rgba(242,201,76,0.6);
+    box-shadow:
+      inset 0 0 0 2px var(--accent),
+      inset 0 1px 0 rgba(255,255,255,0.92),
+      0 0 11px 3px rgba(242,201,76,0.6);
   }
 }
 
-/* Fehlgriff: kurz rot aufblitzen. */
-.stein.daneben .stein-face { animation: daneben-blitz 420ms ease; }
+/* Fehlgriff: kurz rot aufblitzen – im Motivfeld, nicht auf dem ganzen Stein.
+   Die Vertiefung ist die Fläche, auf die man beim Klicken schaut. */
+.stein.daneben .stein-inlay { animation: daneben-blitz 420ms ease; }
 
 @keyframes daneben-blitz {
-  0%, 100% { background: linear-gradient(158deg, #ffffff, #fdfefd 42%, #f3f7f4); }
-  40%      { background: linear-gradient(158deg, #ffdad4, #f6aca3); }
+  0%, 100% { background: linear-gradient(160deg, var(--stein-feld-1), var(--stein-feld-2)); }
+  40%      { background: linear-gradient(160deg, #ffdad3, #f5aea4); }
 }
 
 /* Weggeräumt: nach oben wegfliegen und ausblenden. */
@@ -670,9 +797,12 @@ body {
    überläuft.
 */
 
+/* Das Feld gibt die Ränder vor; die Zeichnung nimmt, was darin Platz hat.
+   `preserveAspectRatio` im SVG hält sie dabei im richtigen Verhältnis, sie
+   füllt also nie beide Richtungen ganz aus – der Rest ist Luft. */
 .motiv {
-  width: 92%;
-  height: 92%;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 
@@ -687,18 +817,19 @@ body {
 }
 
 /* Zahlzeichen und Farbzeichen der 萬-Steine, übereinander wie auf echten
-   Steinen: die Zahl grün, das 萬 darunter rot. Zwei Farben auf einem Stein
-   sind schneller erkannt als eine. */
+   Steinen: die Zahl blau, das 萬 darunter rot und kleiner. Zwei Farben auf
+   einem Stein sind schneller erkannt als eine, und die Zahl ist das, worauf
+   es ankommt – deshalb führt sie, statt mit dem 萬 um den Platz zu ringen. */
 .motiv-zahl { font-size: calc(var(--stein-h) * 0.4); }
 
 .motiv-suit {
-  font-size: calc(var(--stein-h) * 0.32);
-  margin-top: calc(var(--stein-h) * 0.03);
-  color: #c62828;
+  font-size: calc(var(--stein-h) * 0.25);
+  margin-top: calc(var(--stein-h) * 0.05);
+  color: #bf2a1c;
 }
 
-.motiv-glyph { font-size: calc(var(--stein-h) * 0.54); }
-.motiv-glyph.gross { font-size: calc(var(--stein-h) * 0.66); }
+.motiv-glyph { font-size: calc(var(--stein-h) * 0.5); }
+.motiv-glyph.gross { font-size: calc(var(--stein-h) * 0.62); }
 
 /* Die Himmelsrichtung unter dem Wind. Vier ähnlich gebaute Zeichen sind der
    häufigste Fehlgriff – ein Buchstabe klärt das sofort. */
@@ -711,53 +842,41 @@ body {
   opacity: 0.65;
 }
 
-/* Eckzeichen der Blumen und Jahreszeiten: Sie passen nur innerhalb ihrer
-   Gruppe zusammen, und das sieht man an vier verschiedenen Bildern sonst
-   nicht. */
-.motiv-ecke {
-  position: absolute;
-  right: calc(var(--stein-w) * 0.05);
-  bottom: calc(var(--stein-w) * 0.04);
-  padding: 0 calc(var(--stein-w) * 0.05);
-  border-radius: 999px;
-  font-family: var(--cjk);
-  font-size: calc(var(--stein-h) * 0.17);
-  line-height: 1.35;
-  font-weight: 700;
-}
-
 /* Farben der Steingruppen. Die Farbe erkennt man schneller als das Bild,
-   und beim Paarsuchen zählt genau das. Kräftig, wie auf echten Steinen:
-   auf weißem Grund darf nichts blass sein. */
-.stein.bambus        { color: #0e8a3c; }
-.stein.muenze        { color: #12579b; }
+   und beim Paarsuchen zählt genau das. Es sind die drei Tinten eines
+   Mahjongsatzes – dieselben Werte wie in motive.js, weil Zeichnung und
+   Schrift auf einem Stein nebeneinander stehen können.
+
+   Gezeichnete Motive (Münzen, Bambus) färben sich überwiegend selbst; hier
+   steht nur, was Schrift ist oder was `currentColor` noch braucht. */
+.stein.bambus        { color: #137038; }
+.stein.muenze        { color: #17548f; }
 /* Bei den Zeichensteinen gilt die Gruppenfarbe für die Zahl; das 萬 darunter
    ist rot (siehe .motiv-suit). */
-.stein.zeichen       { color: #0e8a3c; }
-.stein.wind          { color: #12579b; }
-.stein.drache-rot    { color: #cc2a1c; }
-.stein.drache-gruen  { color: #0e8a3c; }
-.stein.drache-weiss  { color: #12579b; }
+.stein.zeichen       { color: #17548f; }
+/* Die Winde stehen etwas dunkler als die Zeichensteine. Beide sind Schrift
+   in Blau, und ohne diesen Abstand greift man auf einem vollen Brett nach
+   dem falschen. */
+.stein.wind          { color: #1d3a63; }
+.stein.drache-rot    { color: #bf2a1c; }
+.stein.drache-gruen  { color: #137038; }
+.stein.drache-weiss  { color: #17548f; }
 .stein.blume         { color: #c72f8f; }
 .stein.jahreszeit    { color: #b0740c; }
 
-/* Die vier Blumen sind gezeichnet, da wäre eine gemeinsame Farbe seltsam:
-   ein magentafarbener Bambus sieht falsch aus. Zusammengehalten werden sie
-   vom Eckzeichen. */
+/* Blumen und Jahreszeiten sind gezeichnet, da wäre eine gemeinsame Farbe
+   seltsam: ein magentafarbener Bambus sieht falsch aus, und eine grüne
+   Schneeflocke auch. Zusammengehalten werden die beiden Gruppen stattdessen
+   vom Eckzeichen – 花 und 季 sagen, was mit was zusammenpasst. */
 .stein[data-art="blume-pflaume"]       { color: #d6338c; }
 .stein[data-art="blume-orchidee"]      { color: #7b3fc4; }
 .stein[data-art="blume-chrysantheme"]  { color: #e07a12; }
 .stein[data-art="blume-bambus"]        { color: #2f8f3a; }
 
-.stein.blume .motiv-ecke {
-  background: rgba(199,47,143,0.14);
-  color: #a8237a;
-}
-
-.stein.jahreszeit .motiv-ecke {
-  background: rgba(176,116,12,0.16);
-  color: #8a5c0d;
-}
+.stein[data-art="zeit-fruehling"]      { color: #3d9c48; }
+.stein[data-art="zeit-sommer"]         { color: #e8930f; }
+.stein[data-art="zeit-herbst"]         { color: #cf5a16; }
+.stein[data-art="zeit-winter"]         { color: #2f86b8; }
 
 /* ---------- Vorrat ---------- */
 
@@ -786,7 +905,7 @@ body {
   /* So groß wie ein Stein samt Dicke, damit er das Fach genau füllt. */
   width: calc(var(--stein-w) + var(--ebene-dx));
   height: calc(var(--stein-h) + var(--ebene-dy));
-  border-radius: calc(var(--stein-w) * 0.12);
+  border-radius: var(--stein-radius);
   border: 1px dashed rgba(255,255,255,0.22);
   background: rgba(255,255,255,0.05);
 }
@@ -807,9 +926,7 @@ body {
 }
 
 .vorrat-platz .stein::before {
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.3),
-    0 2px 5px rgba(0,0,0,0.4);
+  filter: drop-shadow(0 0 calc(var(--ebene-dy) * 0.24) rgba(8,24,15,0.45));
 }
 
 /* ---------- Fußleiste ---------- */
@@ -1025,8 +1142,47 @@ body {
   #vorrat-leiste { padding: 7px 12px; gap: 10px; }
   .vorrat-titel { display: none; }
 
-  .start-card { padding: 26px 18px; }
+  .start-card { padding: 26px 14px; max-width: 100%; }
+
+  /* Vier Layouts nebeneinander werden hier schmaler als ihre Beschriftung
+     und schieben die Karte über den Rand – zwei Reihen zu zweit passen. */
+  .layout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .variante-grid { flex-wrap: wrap; }
+  .variante-btn { flex: 1 1 130px; }
+
+  /* Fünf Spalten mit Namen wie "Schildkröte" lassen sich auf 290 Pixeln
+     nicht unterbringen, und umgebrochene Überschriften wären schlechter
+     zu lesen als eine Tabelle, die man seitlich schiebt. Der Rahmen
+     scrollt, die Seite bleibt stehen. */
+  #stats-table th, #stats-table td { padding: 6px 8px; }
+  #start-stats { overflow-x: auto; }
   .variante-grid { flex-direction: column; }
   .layout-grid { grid-template-columns: repeat(2, 1fr); }
   #stats-table th, #stats-table td { padding: 5px 8px; }
+}
+
+/* ------------------------------------------------------------------
+   Trefferflächen auf dem Telefon
+
+   Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man
+   Schaltflächen nicht mehr zuverlässig, und knapp danebenzutippen ist
+   ärgerlicher als ein paar Pixel mehr Rand. Der Block steht am Ende und
+   hebt nur Höhen an – Aussehen, Farben und Anordnung bleiben, wie sie
+   das jeweilige Spiel gesetzt hat.
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  /* Der Weg zur Übersicht wird von allen Knöpfen am häufigsten gebraucht
+     und war mit 33 mal 30 Pixeln der kleinste. */
+  .corner-home {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Aufklappzeilen sind reine Textzeilen und damit nur so hoch wie die
+     Schrift – ein paar Pixel Luft machen sie treffbar. */
+  summary { padding-top: 8px; padding-bottom: 8px; }
+
+  #stats-reset { padding-top: 10px; padding-bottom: 10px; }
+  .stats-scope-btn { min-height: 36px; }
 }

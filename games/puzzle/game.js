@@ -2295,7 +2295,8 @@ function farbenAus(hex) {
 }
 
 function ladeFarbe() {
-  const f = localStorage.getItem("puzzleFarbe");
+  let f = null;
+  try { f = localStorage.getItem("puzzleFarbe"); } catch (e) { /* egal */ }
   return /^#[0-9a-f]{6}$/i.test(f || "") ? f : FARBE_STANDARD;
 }
 
@@ -2396,7 +2397,7 @@ function loescheEigenesBild(index) {
   const liste = ladeEigeneBilder();
   if (index < 0 || index >= liste.length) return;
   liste.splice(index, 1);
-  speichereEigeneBilder(liste);
+  try { speichereEigeneBilder(liste); } catch (e) { /* voller Speicher soll das Löschen nicht anhalten */ }
   // Die Kennungen der nachrückenden Bilder verschieben sich – ein Spielstand
   // zu einem eigenen Bild ist danach nicht mehr eindeutig zuzuordnen.
   const saved = loadSave();
@@ -2404,7 +2405,9 @@ function loescheEigenesBild(index) {
 }
 
 function gewaehlteTeile() {
-  const n = parseInt(localStorage.getItem("puzzleTeileWahl"), 10);
+  let roh = null;
+  try { roh = localStorage.getItem("puzzleTeileWahl"); } catch (e) { /* egal */ }
+  const n = parseInt(roh, 10);
   return TEILE_STUFEN.indexOf(n) >= 0 ? n : TEILE_STUFEN[0];
 }
 
@@ -2413,7 +2416,8 @@ function setzeTeileWahl(n) {
 }
 
 function ladeSchnittArt() {
-  const a = localStorage.getItem(SCHNITT_KEY);
+  let a = null;
+  try { a = localStorage.getItem(SCHNITT_KEY); } catch (e) { /* egal */ }
   return SCHNITT_ARTEN[a] ? a : "ungewoehnlich";
 }
 
@@ -2422,7 +2426,7 @@ function setzeSchnittArt(name) {
 }
 
 function ladeDrehmodus() {
-  return localStorage.getItem(DREH_KEY) === "1";
+  try { return localStorage.getItem(DREH_KEY) === "1"; } catch (e) { return false; }
 }
 
 function setzeDrehmodus(an) {

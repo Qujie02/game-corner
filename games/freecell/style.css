@@ -30,9 +30,19 @@ body {
   font-family: "Segoe UI", system-ui, Arial, sans-serif;
   color: var(--ink);
   min-height: 100vh;
-  background:
+  /* Die Grundfarbe trägt die ganze Seite, der Verlauf liegt nur oben darauf.
+
+     Beides ist nötig: `html` und `body` sind genau fensterhoch, und ein
+     Hintergrund ohne `no-repeat` kachelt darunter weiter – bei einer Seite,
+     die länger ist als das Fenster, sieht man die Wiederholung als harte
+     Kante quer über den Schirm. Ohne Grundfarbe wiederum bliebe unterhalb
+     des Verlaufs nichts übrig. Der Verlauf endet unten ohnehin in --felt-3,
+     deshalb geht er nahtlos in die Fläche über. */
+  background-color: var(--felt-3);
+  background-image:
     radial-gradient(ellipse 90% 60% at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
     radial-gradient(ellipse 140% 90% at 50% 10%, var(--felt-1), var(--felt-2) 55%, var(--felt-3) 100%);
+  background-repeat: no-repeat;
 }
 
 .hidden { display: none !important; }
@@ -199,14 +209,38 @@ body {
   border-top: 1px solid var(--panel-border);
 }
 
-#start-stats h2 {
+/* Die Überschrift ist zugleich der Klappgriff: Auf dem Telefon fängt die
+   Statistik zugeklappt an, weil sie sonst den halben Startbildschirm
+   füllt, bevor man überhaupt spielen kann. Am Rechner bleibt sie offen –
+   dort ist der Platz da. Zugeklappt wird in game.js. */
+#start-stats summary {
   margin: 0 0 14px;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  cursor: pointer;
+  list-style: none;
 }
+
+#start-stats summary::-webkit-details-marker { display: none; }
+
+/* Das Dreieck zeigt, dass hier etwas auf- und zugeht – ohne Marker sieht
+   die Zeile sonst aus wie eine gewöhnliche Überschrift. */
+#start-stats summary::after {
+  content: " ▾";
+  color: var(--accent);
+}
+
+#start-stats:not([open]) summary {
+  margin-bottom: 0;
+}
+
+#start-stats:not([open]) summary::after { content: " ▸"; }
+
+#start-stats summary:hover { color: var(--ink); }
+#start-stats summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 #stats-table { border-collapse: collapse; font-size: 0.82rem; margin: 0 auto; }
 #stats-table th, #stats-table td { padding: 6px 18px; text-align: center; }
@@ -787,4 +821,69 @@ body {
   .start-btn { min-width: 0; padding: 14px 18px; }
   #stats-table th, #stats-table td { padding: 5px 10px; }
   #deal-hinweis { bottom: 100px; }
+}
+
+/* ------------------------------------------------------------------
+   Querformat auf dem Telefon
+
+   Hier ist die Höhe das knappe Gut und die Breite im Überfluss da. Die
+   Kopfzeile stand trotzdem zweizeilig – Titel oben, Zähler darunter –
+   und fraß mit Fußzeile zusammen gut ein Drittel des Schirms. Nebeneinander
+   passen beide bei 844 Pixeln Breite mühelos, und die gesparte Höhe geht
+   an die Karten: Die werden dadurch fast doppelt so groß wie im Hochformat.
+   ------------------------------------------------------------------ */
+@media (orientation: landscape) and (max-height: 560px) {
+  #topbar {
+    grid-template-columns: auto 1fr;
+    padding: 4px 10px 4px 46px;
+    gap: 10px;
+  }
+
+  #game-title { grid-column: 1; grid-row: 1; }
+
+  #stats {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    justify-content: flex-end;
+  }
+
+  /* Im Hochformat mussten fünf Felder weichen; quer ist Platz dafür. */
+  .stat-chip[data-chip="frei"] { display: flex; }
+
+  #board { padding: 4px 5px 6px; }
+  .gruppe-titel { font-size: 0.5rem; }
+
+  #game-footer { padding: 5px 8px; gap: 6px; }
+  .action-btn { padding: 5px 10px; font-size: 0.74rem; }
+
+  /* Der Zurück-Knopf sitzt über der Kopfzeile und darf sie nicht höher
+     machen, als sie sein muss. */
+  .corner-home { top: 4px; left: 6px; height: 34px; min-height: 34px; }
+}
+
+/* ------------------------------------------------------------------
+   Trefferflächen auf dem Telefon
+
+   Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man
+   Schaltflächen nicht mehr zuverlässig, und knapp danebenzutippen ist
+   ärgerlicher als ein paar Pixel mehr Rand. Der Block steht am Ende und
+   hebt nur Höhen an – Aussehen, Farben und Anordnung bleiben, wie sie
+   das jeweilige Spiel gesetzt hat.
+   ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+  /* Der Weg zur Übersicht wird von allen Knöpfen am häufigsten gebraucht
+     und war mit 33 mal 30 Pixeln der kleinste. */
+  .corner-home {
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Aufklappzeilen sind reine Textzeilen und damit nur so hoch wie die
+     Schrift – ein paar Pixel Luft machen sie treffbar. */
+  summary { padding-top: 8px; padding-bottom: 8px; }
+
+  #stats-reset { padding-top: 10px; padding-bottom: 10px; }
+  .stats-scope-btn { min-height: 36px; }
 }
