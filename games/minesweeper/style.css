@@ -595,13 +595,16 @@ body {
 #end-box {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  /* Breit genug, dass die beiden Schwierigkeitsgruppen nebeneinander stehen,
+     ohne dass es drückt: Zwei Gruppen zu je --end-gruppe-min plus Abstand
+     brauchen 436 Pixel, dazu der Innenabstand links und rechts. */
+  max-width: 520px;
   text-align: center;
   background: rgba(9, 32, 20, 0.97);
   border: 1px solid var(--panel-border);
   border-top: 3px solid var(--accent);
   border-radius: 18px;
-  padding: 32px 34px;
+  padding: 32px 28px;
   box-shadow: 0 24px 60px rgba(0,0,0,0.5);
 }
 
@@ -620,9 +623,14 @@ body {
   color: var(--ink-dim);
 }
 
+/* Die kleinste Breite, bei der eine Gruppe ihre drei Knöpfe noch trägt –
+   gemessen am längsten Wort ("Schwer") mal drei, plus Abstände, Innenabstand
+   und Rahmen. Unterschreitet der Platz das, stehen die beiden Gruppen
+   untereinander, statt dass die Knöpfe seitlich hinauslaufen. */
 .end-groups {
+  --end-gruppe-min: 212px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(var(--end-gruppe-min), 1fr));
   gap: 12px;
 }
 
@@ -642,7 +650,13 @@ body {
   margin-bottom: 8px;
 }
 
-.end-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+/* `minmax(0, 1fr)` statt `1fr`: Eine 1fr-Spalte ist `minmax(auto, 1fr)`, und
+   `auto` heißt hier min-content – die Spalte kann also nicht unter die Breite
+   ihrer Beschriftung schrumpfen und schiebt stattdessen aus dem Kasten
+   hinaus. Genau daran lag "Extrem" vorher auf dem Gruppenrahmen. Mit der
+   Null als Minimum teilen sich die drei Knöpfe wirklich, was da ist; dass es
+   reicht, sichert --end-gruppe-min. */
+.end-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 
 .end-actions {
   display: flex;

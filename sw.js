@@ -46,6 +46,8 @@ const SCHALE = [
   "./games/starstruck/game.js",
   "./games/starstruck/engine.js",
   "./games/starstruck/worker.js",
+  "./games/starstruck/tagesraetsel.js",
+  "./games/serie.js",
 
   "./games/minesweeper/index.html",
   "./games/minesweeper/style.css",

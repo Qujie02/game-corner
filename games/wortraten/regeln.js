@@ -156,3 +156,127 @@ function tastaturStand(versuche, loesung) {
   }
   return stand;
 }
+
+/* ---------------------------------------------------------------------
+   Harter Modus
+
+   Wer will, bindet sich an die eigenen Hinweise: Ein grüner Buchstabe
+   muss an seiner Stelle bleiben, ein gelber muss wieder vorkommen – aber
+   nicht dort, wo er schon als falsch gesetzt gemeldet wurde –, und ein
+   grauer darf gar nicht auftauchen.
+
+   Der Haken sind doppelte Buchstaben. "Grau" heißt nach der Bewertung
+   weiter oben nicht "kommt nicht vor", sondern "kommt nicht noch einmal
+   vor": Bei Lösung KATER und Versuch EBENE wird das erste E gelb, die
+   beiden anderen werden grau. Wer daraus ein Verbot des Buchstabens E
+   machte, würde von da an jedes Wort ablehnen, das die Lösung überhaupt
+   noch treffen kann.
+
+   Deshalb wird gezählt statt verboten. Jeder Versuch liefert für jeden
+   Buchstaben eine Untergrenze – grün und gelb zusammen – und, wo ein Grau
+   dabei war, zusätzlich eine Obergrenze. Aus mehreren Versuchen bleibt
+   die schärfste Grenze stehen.
+   --------------------------------------------------------------------- */
+
+/** Für die Meldungen: 1 → "einmal", 2 → "zweimal", … */
+const MALE = ["null", "einmal", "zweimal", "dreimal", "viermal", "fünfmal"];
+
+/**
+ * Was die bisherigen Versuche über die Lösung verraten, gebündelt als
+ * Auflagen für den nächsten Versuch.
+ *
+ * `fest` hält je Stelle den grünen Buchstaben, `verbotenAn` je Buchstabe
+ * die Stellen, an denen er gelb war, `mindestens` und `hoechstens` die
+ * Zahl der Vorkommen.
+ */
+function harteAuflagen(versuche, loesung) {
+  const fest = new Array(WORTLAENGE).fill("");
+  const verbotenAn = {};
+  const mindestens = {};
+  const hoechstens = {};
+
+  for (let i = 0; i < versuche.length; i++) {
+    const wort = versuche[i];
+    const befund = bewerteVersuch(wort, loesung);
+    /* Je Versuch getrennt zählen: Die Grenzen ergeben sich aus einem
+       einzelnen Befund, nicht aus der Summe aller. */
+    const bestaetigt = {};
+    const grau = {};
+
+    for (let j = 0; j < WORTLAENGE; j++) {
+      const b = wort[j];
+      if (befund[j] === "richtig") {
+        fest[j] = b;
+        bestaetigt[b] = (bestaetigt[b] || 0) + 1;
+      } else if (befund[j] === "dabei") {
+        bestaetigt[b] = (bestaetigt[b] || 0) + 1;
+        if (!verbotenAn[b]) verbotenAn[b] = {};
+        verbotenAn[b][j] = true;
+      } else {
+        grau[b] = true;
+      }
+    }
+
+    for (const b in bestaetigt) {
+      if (mindestens[b] === undefined || bestaetigt[b] > mindestens[b]) {
+        mindestens[b] = bestaetigt[b];
+      }
+    }
+    for (const b in grau) {
+      const grenze = bestaetigt[b] || 0;
+      if (hoechstens[b] === undefined || grenze < hoechstens[b]) {
+        hoechstens[b] = grenze;
+      }
+    }
+  }
+
+  return {
+    fest: fest,
+    verbotenAn: verbotenAn,
+    mindestens: mindestens,
+    hoechstens: hoechstens,
+  };
+}
+
+/**
+ * Prüft ein Wort gegen die Auflagen.
+ *
+ * Liefert den ersten Verstoß als fertigen Satz – oder null, wenn das Wort
+ * durchgeht. Nur der erste: Wer drei Hinweise auf einmal vorgehalten
+ * bekommt, liest keinen davon.
+ */
+function verstossImHartenModus(wort, auflagen) {
+  for (let j = 0; j < WORTLAENGE; j++) {
+    if (auflagen.fest[j] && wort[j] !== auflagen.fest[j]) {
+      return "An Stelle " + (j + 1) + " muss ein " + auflagen.fest[j] + " stehen.";
+    }
+  }
+
+  const zahl = {};
+  for (let j = 0; j < WORTLAENGE; j++) zahl[wort[j]] = (zahl[wort[j]] || 0) + 1;
+
+  for (const b in auflagen.mindestens) {
+    const soll = auflagen.mindestens[b];
+    if ((zahl[b] || 0) >= soll) continue;
+    return soll === 1
+      ? b + " muss vorkommen."
+      : b + " muss " + MALE[soll] + " vorkommen.";
+  }
+
+  for (const b in auflagen.hoechstens) {
+    const darf = auflagen.hoechstens[b];
+    if ((zahl[b] || 0) <= darf) continue;
+    return darf === 0
+      ? b + " kommt nicht vor."
+      : b + " kommt höchstens " + MALE[darf] + " vor.";
+  }
+
+  for (let j = 0; j < WORTLAENGE; j++) {
+    const stellen = auflagen.verbotenAn[wort[j]];
+    if (stellen && stellen[j]) {
+      return "An Stelle " + (j + 1) + " steht kein " + wort[j] + ".";
+    }
+  }
+
+  return null;
+}

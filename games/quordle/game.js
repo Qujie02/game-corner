@@ -24,8 +24,9 @@ const FELDER_ANZAHL = 4;
 const STATS_KEY = "quordleStats";
 const VERLAUF_KEY = "quordleVerlauf";
 const SPIEL_KEY = "quordleSpiel";
+const SERIE_KEY = "quordleSerie";
 
-const statistik = macheStatistik(STATS_KEY, VERLAUF_KEY);
+const statistik = macheStatistik(STATS_KEY, VERLAUF_KEY, SERIE_KEY);
 
 /* So lange bleibt eine Meldung stehen. */
 const MELDUNG_MS = 2400;
@@ -37,7 +38,6 @@ const DREH_MS = 480;
 const DREH_ABSTAND = 170;
 
 let tag = null;
-let runde = 0;
 /* Die vier gesuchten Wörter und die gemeinsame Liste der Versuche. */
 let woerter = [];
 let versuche = [];
@@ -98,18 +98,18 @@ function istFertig() {
    --------------------------------------------------------------------- */
 
 function speichereSpiel() {
-  schreibSpeicher(SPIEL_KEY, { tag: tag, runde: runde, versuche: versuche });
+  schreibSpeicher(SPIEL_KEY, { tag: tag, versuche: versuche });
 }
 
 function ladeSpiel() {
   const gespeichert = liesSpeicher(SPIEL_KEY, null);
   tag = heutigerTag();
-  runde = 0;
   versuche = [];
 
-  /* Ein Spielstand von gestern ist wertlos: Das Datum bestimmt die Wörter. */
-  if (gespeichert && gespeichert.tag === tag && typeof gespeichert.runde === "number") {
-    runde = gespeichert.runde;
+  /* Ein Spielstand von gestern ist wertlos: Das Datum bestimmt die Wörter.
+     Ein Stand aus der Zeit der Zusatzrunden trägt ein Feld `runde` – die
+     Wörter dazu gibt es nicht mehr, also zählt er als nicht vorhanden. */
+  if (gespeichert && gespeichert.tag === tag && !gespeichert.runde) {
     if (Array.isArray(gespeichert.versuche)) {
       /* Nur übernehmen, was auch heute ein gültiger Versuch wäre – ein von
          Hand verbogener Speicher soll das Feld nicht zerlegen. */
@@ -119,7 +119,7 @@ function ladeSpiel() {
     }
   }
 
-  woerter = woerterFuerTag(SPIEL, tag, runde, FELDER_ANZAHL);
+  woerter = woerterFuerTag(SPIEL, tag, 0, FELDER_ANZAHL);
 }
 
 /* ---------------------------------------------------------------------
@@ -136,11 +136,31 @@ function zeigeStartbildschirm() {
   let zeile = wochentage[datum.getDay()] + ", " +
     String(datum.getDate()).padStart(2, "0") + "." +
     String(datum.getMonth() + 1).padStart(2, "0") + "." + datum.getFullYear();
-  if (runde > 0) zeile += " · Zusatzrunde " + runde;
   document.getElementById("tages-zeile").textContent = zeile;
 
   zeigeKarte();
+  zeigeSerie();
   statistik.zeigeTabelle("stats-table-body");
+}
+
+function zeigeSerie() {
+  const stand = statistik.serie(tag);
+  document.getElementById("serie-aktuell").textContent = String(stand.aktuell);
+  document.getElementById("serie-best").textContent = String(stand.best);
+
+  let hinweis;
+  if (stand.heuteGeschafft) {
+    hinweis = "Heute geschafft – morgen geht es weiter.";
+  } else if (istFertig()) {
+    hinweis = "Heute nicht geschafft – morgen fängt eine neue Serie an.";
+  } else if (stand.aktuell > 0) {
+    hinweis = "Alle vier Wörter finden, dann wächst die Serie.";
+  } else {
+    hinweis = "Alle vier Wörter an einem Tag finden startet eine Serie.";
+  }
+  document.getElementById("serie-hinweis").textContent = hinweis;
+
+  document.getElementById("serie").classList.toggle("ist-aktiv", stand.aktuell > 0);
 }
 
 function zeigeKarte() {
@@ -487,6 +507,7 @@ function pruefeVersuch() {
     if (istFertig()) {
       const gewonnen = alleGeloest();
       statistik.merkeBeendet(gewonnen, versuche.length);
+      if (gewonnen) statistik.merkeTagGeschafft(tag);
       zeigeEnde(gewonnen);
     }
   });
@@ -582,15 +603,6 @@ function zeigeEnde(gewonnen) {
 
 document.getElementById("spiel-karte").addEventListener("click", oeffneSpiel);
 
-document.getElementById("neue-raetsel").addEventListener("click", function () {
-  if (versuche.length > 0 && !istFertig() &&
-      !confirm("Das Quordle läuft noch. Trotzdem vier neue Wörter ziehen?")) return;
-  runde += 1;
-  versuche = [];
-  woerter = woerterFuerTag(SPIEL, tag, runde, FELDER_ANZAHL);
-  speichereSpiel();
-  zeigeStartbildschirm();
-});
 
 document.getElementById("stats-reset").addEventListener("click", function () {
   if (!confirm("Die Quordle-Statistik wirklich zurücksetzen? Das laufende Rätsel bleibt erhalten.")) return;

@@ -38,11 +38,18 @@
         <span class="karte-punkte" id="karte-punkte"></span>
       </button>
 
-      <div class="debug-leiste">
-        <button id="neue-raetsel" type="button" class="action-btn">
-          <span class="icon">🎲</span>Neue Rätsel
-        </button>
-        <span class="debug-hinweis">Zum Testen: wirft das Quordle des Tages weg und zieht vier neue Wörter.</span>
+      <div id="serie" class="serie">
+        <div class="serie-werte">
+          <span class="serie-wert">
+            <span class="serie-zahl" id="serie-aktuell">0</span>
+            <span class="serie-label">Serie</span>
+          </span>
+          <span class="serie-wert">
+            <span class="serie-zahl" id="serie-best">0</span>
+            <span class="serie-label">Bestwert</span>
+          </span>
+        </div>
+        <p class="serie-hinweis" id="serie-hinweis"></p>
       </div>
 
       <section class="stats-block">
@@ -72,6 +79,7 @@
           <li>Angenommen wird nur, was auf der Wortliste steht. Ein unbekanntes Wort kostet keinen Versuch.</li>
           <li>Man muss nicht von links nach rechts tippen: <strong>Auf ein Feld klicken</strong> setzt die Schreibmarke auf diese Stelle, die Pfeiltasten verschieben sie.</li>
           <li>Gewonnen ist erst, wenn alle vier Wörter stehen.</li>
+          <li>Es gibt <strong>ein Quordle je Tag</strong>; morgen kommt das nächste. Die <strong>Serie</strong> zählt die Tage, an denen es gefallen ist – ein ausgelassener Tag setzt sie zurück.</li>
         </ul>
       </details>
 
@@ -130,6 +138,7 @@
     </div>
   </div>
 
+  <script src="../serie.js"></script>
   <script src="../wortraten/woerter.js"></script>
   <script src="../wortraten/regeln.js"></script>
   <script src="../wortraten/statistik.js"></script>

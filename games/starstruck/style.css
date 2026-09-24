@@ -897,6 +897,146 @@ body {
 }
 
 /* ------------------------------------------------------------------
+   Rätsel des Tages
+
+   Steht über den gewöhnlichen Stufen, weil es das ist, wofür man
+   täglich wiederkommt. Zwei Karten nebeneinander, darunter die Serie.
+   ------------------------------------------------------------------ */
+
+.tages-block {
+  padding: 18px 18px 16px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--accent);
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.tages-zeichen { color: var(--accent); }
+
+.tages-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.tages-karte {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, transform 120ms ease, border-color 140ms ease;
+}
+
+.tages-karte:hover { background: rgba(255, 255, 255, 0.13); transform: translateY(-1px); }
+
+.tages-sterne {
+  flex: none;
+  font-size: 0.95rem;
+  letter-spacing: -0.06em;
+  color: var(--ink-dim);
+}
+
+.tages-text { flex: 1; min-width: 0; }
+.tages-titel { display: block; font-weight: 700; font-size: 0.95rem; }
+.tages-sub { display: block; font-size: 0.75rem; color: var(--ink-dim); margin-top: 2px; }
+
+.tages-haken { flex: none; color: var(--gold, #6fcf97); font-weight: 700; }
+
+.tages-karte.ist-offen { border-left-color: var(--accent); }
+.tages-karte.ist-offen .tages-sterne { color: var(--accent); }
+
+.tages-karte.ist-laeuft {
+  border-left-color: var(--accent);
+  background: rgba(242, 201, 76, 0.12);
+}
+.tages-karte.ist-laeuft .tages-sterne { color: var(--accent); }
+
+.tages-karte.ist-geschafft {
+  border-left-color: #6fcf97;
+  background: rgba(111, 207, 151, 0.1);
+}
+.tages-karte.ist-geschafft .tages-sterne,
+.tages-karte.ist-geschafft .tages-haken { color: #6fcf97; }
+
+/* Die Serie
+
+   Zwei Zahlen und ein Satz, der sagt, was als Nächstes zu tun ist. Der
+   Satz ist der eigentliche Punkt: Eine nackte Null erklärt niemandem,
+   wie sie zu einer Eins wird. */
+
+.serie {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.22);
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.serie.ist-aktiv {
+  border-color: rgba(242, 201, 76, 0.45);
+  background: rgba(242, 201, 76, 0.1);
+}
+
+.serie-werte { display: flex; gap: 22px; }
+
+.serie-wert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.serie-zahl {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+  transition: color 200ms ease;
+}
+
+.serie.ist-aktiv .serie-zahl { color: var(--accent); }
+
+.serie-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  margin-top: 3px;
+}
+
+.serie-hinweis {
+  margin: 0;
+  flex: 1 1 180px;
+  min-width: 0;
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+}
+
+/* Beim Rätsel des Tages gibt es keine Hilfen.
+
+   Es ist für alle dasselbe, und eine Serie ist nur etwas wert, wenn sie
+   ohne Nachschlagen zustande kam. Die beiden Knöpfe verschwinden deshalb;
+   Rückgängig und die Optionen bleiben – das eine ist kein Hinweis,
+   das andere eine Frage der Bedienung. */
+#game-screen.ist-taeglich #hint-btn,
+#game-screen.ist-taeglich #check-btn { display: none; }
+
+/* ------------------------------------------------------------------
    Trefferflächen auf dem Telefon
 
    Eine Fingerkuppe deckt gut vierzig Pixel ab; darunter trifft man

@@ -24,13 +24,34 @@ const MODES = {
     key: "h2", n: 10, k: 2, label: "Schwer", sub: "2 Sterne · 10×10", short: "2★ Schwer",
     spec: { minProbes: 4, maxProbes: 99 },
   },
+  // Die beiden Tagesstufen. Sie stehen bewusst nicht in MODE_ORDER: Der
+  // Vorrat füllt sie nicht (ihre Rätsel stehen fertig in tagesraetsel.js),
+  // und in den Statistiktabellen der Startseite hätten sie nichts verloren.
+  d1: {
+    key: "d1", n: 9, k: 1, label: "Tagesrätsel", sub: "1 Stern · 9×9", short: "1★ Tagesrätsel",
+    taeglich: true,
+  },
+  d2: {
+    key: "d2", n: 10, k: 2, label: "Tagesrätsel", sub: "2 Sterne · 10×10", short: "2★ Tagesrätsel",
+    taeglich: true,
+  },
 };
 const MODE_ORDER = ["m1", "h1", "m2", "h2"];
+
+/* Die Stufen des Tages, in der Reihenfolge, in der sie auf der Startseite
+   stehen. */
+const TAGES_MODI = ["d1", "d2"];
 
 const SAVE_KEY = "starstruckSave";
 const STATS_KEY = "starstruckStats";
 const SETTINGS_KEY = "starstruckSettings";
 const POOL_KEY = "starstruckPool";
+const TAGES_KEY = "starstruckTag";
+const SERIE_KEY = "starstruckSerie";
+
+/* Das Zählen der Tage steht in ../serie.js – Wordle und Quordle führen
+   dieselbe Serie unter eigenen Schlüsseln. */
+const serie = macheSerie(SERIE_KEY);
 
 /* So viele fertige Rätsel hält der Vorrat je Stufe bereit. */
 const POOL_TARGET = 5;
@@ -99,16 +120,99 @@ function recordStat(modeKey, field, value) {
   saveStats(stats);
 }
 
+/* ---------------------------------------------------------------
+   Die Rätsel des Tages
+
+   Zwei Stück, eines je Sternzahl, fest an das Datum gebunden. Sie werden
+   nicht gewürfelt, sondern aus den Listen in tagesraetsel.js gewählt –
+   die Begründung steht dort.
+   --------------------------------------------------------------- */
+
+const TAG_IN_MS = 24 * 60 * 60 * 1000;
+
+/** Zerlegt eine Zeile aus tagesraetsel.js in Gebiete und Lösung. */
+function lesTagesraetsel(zeile) {
+  const teile = zeile.split("|");
+  const regionOf = [];
+  for (let i = 0; i < teile[0].length; i++) regionOf.push(Number(teile[0][i]));
+  const stars = [];
+  for (let i = 0; i < teile[1].length; i += 2) stars.push(Number(teile[1].slice(i, i + 2)));
+  return { regionOf: regionOf, stars: stars };
+}
+
+function tagesListe(modeKey) {
+  const roh = modeKey === "d1" ? TAGESRAETSEL_EIN_STERN : TAGESRAETSEL_ZWEI_STERNE;
+  /* Jede Zeile ist ein Raetsel ohne Leerzeichen – an Zwischenraum zu
+     trennen kommt ohne Zeilenumbruch im Quelltext aus. */
+  return roh.trim().split(/\s+/);
+}
+
+/**
+ * Das Rätsel, das an `tag` für diese Stufe dran ist.
+ *
+ * Gezählt wird in ganzen Tagen seit dem 1. Januar 1970, umgerechnet über
+ * die Mittagszeit – so fällt die Zeitumstellung nicht ins Gewicht. Da
+ * beide Listen teilerfremd lang sind (120 und 113), wiederholt sich die
+ * Paarung praktisch nie.
+ */
+function tagesraetselFuer(modeKey, tag) {
+  const liste = tagesListe(modeKey);
+  const nummer = Math.floor(new Date(tag + "T12:00:00").getTime() / TAG_IN_MS);
+  return lesTagesraetsel(liste[((nummer % liste.length) + liste.length) % liste.length]);
+}
+
+/** Welche Tagesrätsel heute schon gefallen sind. */
+function ladeTagesstand() {
+  let stand = null;
+  try {
+    const roh = localStorage.getItem(TAGES_KEY);
+    if (roh) stand = JSON.parse(roh);
+  } catch (e) { /* egal */ }
+  const heute = heutigerTagSerie();
+  if (!stand || stand.tag !== heute) return { tag: heute, geschafft: {} };
+  if (!stand.geschafft) stand.geschafft = {};
+  return stand;
+}
+
+function speichereTagesstand(stand) {
+  try { localStorage.setItem(TAGES_KEY, JSON.stringify(stand)); } catch (e) { /* egal */ }
+}
+
+/**
+ * Hält fest, dass eine Tagesstufe gefallen ist, und rückt die Serie vor,
+ * sobald beide stehen.
+ */
+function merkeTagesraetselGeschafft(modeKey) {
+  const stand = ladeTagesstand();
+  if (stand.geschafft[modeKey]) return;
+  stand.geschafft[modeKey] = true;
+  speichereTagesstand(stand);
+  const alle = TAGES_MODI.every(function (k) { return stand.geschafft[k]; });
+  if (alle) serie.merkeTagGeschafft(stand.tag);
+}
+
 /*
  * Ein Spielstand je Sternzahl: eine angefangene Ein-Stern-Partie und eine
  * angefangene Zwei-Sterne-Partie können nebeneinander bestehen bleiben.
  */
 const STAR_COUNTS = [1, 2];
 
+/**
+ * Das Fach, in dem ein Spielstand liegt.
+ *
+ * Bisher war das die Sternzahl. Die Tagesrätsel haben dieselben
+ * Sternzahlen, würden also die gewöhnlichen Partien überschreiben –
+ * deshalb bekommen sie eigene Fächer "d1" und "d2".
+ */
+function speicherFach(modeKey) {
+  const mode = MODES[modeKey];
+  return mode && mode.taeglich ? modeKey : String(mode ? mode.k : "");
+}
+
 function saveGame() {
   if (!game) return;
   const saves = loadSaves();
-  saves[game.k] = {
+  saves[speicherFach(game.modeKey)] = {
     modeKey: game.modeKey,
     regionOf: Array.from(game.regionOf),
     solution: Array.from(game.solution),
@@ -160,6 +264,14 @@ function loadSaves() {
       const one = validSave(parsed[k]);
       if (one && MODES[one.modeKey].k === k) out[k] = one;
     }
+    /* Die Tagesrätsel liegen in eigenen Fächern. Ohne diese Runde gäben
+       sie zwar beim Speichern keinen Fehler, wären aber beim nächsten
+       Schreiben weg – saveGame liest erst alles und schreibt es zurück. */
+    for (let i = 0; i < TAGES_MODI.length; i++) {
+      const key = TAGES_MODI[i];
+      const one = validSave(parsed[key]);
+      if (one && one.modeKey === key) out[key] = one;
+    }
   } catch (e) { /* egal */ }
   return out;
 }
@@ -172,9 +284,9 @@ function loadSave(starCount) {
   return loadSaves()[starCount] || null;
 }
 
-function clearSave(starCount) {
+function clearSave(fach) {
   const saves = loadSaves();
-  delete saves[starCount];
+  delete saves[fach];
   writeSaves(saves);
 }
 
@@ -868,7 +980,7 @@ function firstMistake() {
 }
 
 function onCheck() {
-  if (!game || game.won) return;
+  if (!game || game.won || MODES[game.modeKey].taeglich) return;
   const bad = firstMistake();
   if (!bad) {
     showHint("Bis hierher ist alles richtig.", -1, "hint");
@@ -884,7 +996,7 @@ function cellName(idx) {
 }
 
 function onHint() {
-  if (!game || game.won) return;
+  if (!game || game.won || MODES[game.modeKey].taeglich) return;
   const bad = firstMistake();
   if (bad) {
     const where = cellName(bad.idx);
@@ -947,8 +1059,9 @@ function checkWin() {
   if (game.won || !isSolved()) return;
   game.won = true;
   stopTimer();
-  clearSave(game.k);
+  clearSave(speicherFach(game.modeKey));
   recordStat(game.modeKey, "won", elapsedSeconds);
+  if (MODES[game.modeKey].taeglich) merkeTagesraetselGeschafft(game.modeKey);
 
   const mode = MODES[game.modeKey];
   document.getElementById("win-text").textContent =
@@ -983,6 +1096,35 @@ function showLoading(show, text) {
   const overlay = document.getElementById("loading-overlay");
   overlay.classList.toggle("hidden", !show);
   if (text) document.getElementById("loading-text").textContent = text;
+}
+
+/**
+ * Startet eine Tagesstufe – oder setzt sie fort, wenn schon eine läuft.
+ *
+ * Hier wird nichts erzeugt und nichts gewartet: Das Rätsel steht fertig
+ * in tagesraetsel.js.
+ */
+function starteTagesraetsel(modeKey) {
+  if (generating) return;
+  const fach = speicherFach(modeKey);
+  const saved = loadSaves()[fach];
+
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  document.getElementById("win-overlay").classList.add("hidden");
+  stopTimer();
+
+  if (saved && saved.modeKey === modeKey) {
+    installPuzzle(modeKey, saved.regionOf, saved.solution, saved);
+    startTimer(saved.elapsedSeconds || 0);
+    return;
+  }
+
+  const raetsel = tagesraetselFuer(modeKey, heutigerTagSerie());
+  installPuzzle(modeKey, raetsel.regionOf, raetsel.stars, null);
+  recordStat(modeKey, "played");
+  startTimer(0);
+  saveGame();
 }
 
 async function startGame(modeKey) {
@@ -1044,6 +1186,9 @@ function installPuzzle(modeKey, regionOf, solution, saved) {
   const screen = document.getElementById("game-screen");
   screen.classList.remove("mode-1", "mode-2");
   screen.classList.add("mode-" + mode.k);
+  /* Beim Rätsel des Tages gibt es keine Hilfen – das Stylesheet blendet
+     Hinweis und Prüfen daraufhin aus. */
+  screen.classList.toggle("ist-taeglich", !!mode.taeglich);
   document.getElementById("result-btn").classList.add("hidden");
   hideHint();
   buildBoard();
@@ -1083,7 +1228,69 @@ function showStartNotice(text) {
 }
 
 /** Vorrats-Anzeige an den Stufen-Schaltflächen und in der Statuszeile. */
+/**
+ * Die beiden Tageskarten und die Serie.
+ *
+ * Eine Karte zeigt drei Zustände: offen, angefangen, geschafft. Die
+ * Serie darüber hängt an beiden – deshalb sagt der Satz darunter, was
+ * noch fehlt, statt nur eine Zahl hinzustellen.
+ */
+function zeigeTagesraetsel() {
+  const stand = ladeTagesstand();
+  const saves = loadSaves();
+  const wrap = document.getElementById("tages-karten");
+  wrap.innerHTML = "";
+
+  for (let i = 0; i < TAGES_MODI.length; i++) {
+    const key = TAGES_MODI[i];
+    const mode = MODES[key];
+    const fertig = !!stand.geschafft[key];
+    const laufend = !fertig && saves[key] && saves[key].modeKey === key;
+
+    const knopf = document.createElement("button");
+    knopf.type = "button";
+    knopf.className = "tages-karte ist-" + (fertig ? "geschafft" : laufend ? "laeuft" : "offen");
+
+    const sterne = mode.k === 2 ? "★★" : "★";
+    const unten = fertig
+      ? "Geschafft"
+      : laufend
+        ? "Angefangen · " + formatTime(saves[key].elapsedSeconds || 0)
+        : mode.sub;
+
+    knopf.innerHTML =
+      "<span class=\"tages-sterne\">" + sterne + "</span>" +
+      "<span class=\"tages-text\">" +
+        "<span class=\"tages-titel\">" + (mode.k === 2 ? "Zwei Sterne" : "Ein Stern") + "</span>" +
+        "<span class=\"tages-sub\">" + unten + "</span>" +
+      "</span>" +
+      "<span class=\"tages-haken\">" + (fertig ? "✓" : "") + "</span>";
+
+    knopf.addEventListener("click", function () { starteTagesraetsel(key); });
+    wrap.appendChild(knopf);
+  }
+
+  const s = serie.stand(stand.tag);
+  document.getElementById("serie-aktuell").textContent = String(s.aktuell);
+  document.getElementById("serie-best").textContent = String(s.best);
+
+  const offen = TAGES_MODI.filter(function (k) { return !stand.geschafft[k]; }).length;
+  let hinweis;
+  if (offen === 0) {
+    hinweis = "Heute beide geschafft – morgen geht es weiter.";
+  } else if (offen === 1) {
+    hinweis = "Noch eines, dann zählt der Tag.";
+  } else if (s.aktuell > 0) {
+    hinweis = "Beide lösen, dann wächst die Serie.";
+  } else {
+    hinweis = "Beide an einem Tag lösen startet eine Serie.";
+  }
+  document.getElementById("serie-hinweis").textContent = hinweis;
+  document.getElementById("serie").classList.toggle("ist-aktiv", s.aktuell > 0);
+}
+
 function refreshStartScreen() {
+  zeigeTagesraetsel();
   const stats = loadStats();
   const rows = [
     ["Gespielt", (e) => String(e.played)],

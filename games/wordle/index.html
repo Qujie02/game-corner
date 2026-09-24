@@ -31,11 +31,27 @@
 
       <div id="raetsel-liste" class="raetsel-liste"></div>
 
-      <div class="debug-leiste">
-        <button id="neue-raetsel" type="button" class="action-btn">
-          <span class="icon">🎲</span>Neue Rätsel
-        </button>
-        <span class="debug-hinweis">Zum Testen: wirft die drei Rätsel des Tages weg und zieht drei neue.</span>
+      <label class="modus-schalter" for="hart-modus">
+        <span class="modus-text">
+          <span class="modus-titel">Harter Modus</span>
+          <span class="modus-sub">Jeder Versuch muss zu allen Hinweisen passen</span>
+        </span>
+        <input type="checkbox" id="hart-modus" class="modus-box">
+        <span class="modus-knebel" aria-hidden="true"></span>
+      </label>
+
+      <div id="serie" class="serie">
+        <div class="serie-werte">
+          <span class="serie-wert">
+            <span class="serie-zahl" id="serie-aktuell">0</span>
+            <span class="serie-label">Serie</span>
+          </span>
+          <span class="serie-wert">
+            <span class="serie-zahl" id="serie-best">0</span>
+            <span class="serie-label">Bestwert</span>
+          </span>
+        </div>
+        <p class="serie-hinweis" id="serie-hinweis"></p>
       </div>
 
       <section class="stats-block">
@@ -63,7 +79,9 @@
           <li>Angenommen wird nur, was auf der Wortliste steht. Ein unbekanntes Wort kostet keinen Versuch.</li>
           <li>Man muss nicht von links nach rechts tippen: <strong>Auf ein Feld klicken</strong> setzt die Schreibmarke dorthin, die Pfeiltasten verschieben sie. So lässt sich ein bekannter Buchstabe in der Mitte setzen und der Rest drumherum füllen.</li>
           <li>Die Tastatur unter dem Feld führt Buch darüber, was von den Buchstaben schon bekannt ist.</li>
-          <li>Die drei Rätsel eines Tages hängen am Datum – auf jedem Gerät dieselben.</li>
+          <li>Die drei Rätsel eines Tages hängen am Datum – auf jedem Gerät dieselben. Mehr als diese drei gibt es nicht; morgen kommen die nächsten.</li>
+          <li>Die <strong>Serie</strong> zählt die Tage, an denen <strong>alle drei</strong> Rätsel gefallen sind. Ein ausgelassener Tag setzt sie zurück.</li>
+          <li>Im <strong>harten Modus</strong> zählt nur, was zu allem passt, was man schon weiß: Grüne Buchstaben müssen an ihrer Stelle bleiben, gelbe müssen wieder vorkommen – nur nicht dort, wo sie gelb waren –, und graue dürfen nicht auftauchen. Der Schalter lässt sich jederzeit umlegen; er gilt ab dem nächsten Versuch.</li>
         </ul>
       </details>
 
@@ -84,6 +102,10 @@
 
       <div id="topbar-rechts">
         <div id="stats">
+          <div class="stat-chip hidden" id="hart-chip" title="Harter Modus: Versuche müssen zu allen Hinweisen passen">
+            <span class="stat-label">Modus</span>
+            <span class="stat-value">Hart</span>
+          </div>
           <div class="stat-chip">
             <span class="stat-label">Versuche</span>
             <span class="stat-value"><span id="versuch-nr">0</span>/<span id="versuch-max">6</span></span>
@@ -122,6 +144,7 @@
     </div>
   </div>
 
+  <script src="../serie.js"></script>
   <script src="../wortraten/woerter.js"></script>
   <script src="../wortraten/regeln.js"></script>
   <script src="../wortraten/statistik.js"></script>

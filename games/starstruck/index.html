@@ -27,6 +27,32 @@
       </div>
       <p class="start-sub">Wähle einen Spielmodus und einen Schwierigkeitsgrad</p>
 
+      <section class="tages-block">
+        <header class="mode-group-head">
+          <span class="mode-group-stars tages-zeichen">☀</span>
+          <div class="mode-group-text">
+            <h2>Rätsel des Tages</h2>
+            <p>Zwei feste Rätsel, täglich neu – auf jedem Gerät dieselben</p>
+          </div>
+        </header>
+
+        <div class="tages-karten" id="tages-karten"></div>
+
+        <div id="serie" class="serie">
+          <div class="serie-werte">
+            <span class="serie-wert">
+              <span class="serie-zahl" id="serie-aktuell">0</span>
+              <span class="serie-label">Serie</span>
+            </span>
+            <span class="serie-wert">
+              <span class="serie-zahl" id="serie-best">0</span>
+              <span class="serie-label">Bestwert</span>
+            </span>
+          </div>
+          <p class="serie-hinweis" id="serie-hinweis"></p>
+        </div>
+      </section>
+
       <div class="mode-grid">
 
       <section class="mode-group group-1" data-stars="1">
@@ -107,6 +133,8 @@
           <li>Ein Tipp auf ein Feld setzt ein <strong>Kreuz</strong>, der zweite einen <strong>Stern</strong>, der dritte macht es wieder leer.</li>
           <li>Mit gedrückter Maustaste oder gewischtem Finger lassen sich mehrere Felder auf einmal markieren.</li>
           <li>Jedes Rätsel hat genau eine Lösung und ist ohne Raten lösbar. <strong>Mittel</strong> und <strong>Schwer</strong> unterscheiden sich darin, wie weit man vorausdenken muss.</li>
+          <li>Die beiden <strong>Rätsel des Tages</strong> hängen am Datum und sind auf jedem Gerät dieselben. Das mit einem Stern entspricht der Stufe <strong>Schwer</strong>, das mit zwei Sternen liegt bewusst <strong>zwischen Mittel und Schwer</strong>.</li>
+          <li>Die <strong>Serie</strong> zählt die Tage, an denen <strong>beide</strong> Tagesrätsel gefallen sind. Ein ausgelassener Tag setzt sie zurück.</li>
         </ul>
       </details>
 
@@ -230,6 +258,8 @@
   </div>
 
   <script src="engine.js"></script>
+  <script src="../serie.js"></script>
+  <script src="tagesraetsel.js"></script>
   <script src="game.js"></script>
   <script src="../../pwa.js" defer></script>
 </body>

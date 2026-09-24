@@ -25,13 +25,14 @@ const RAETSEL_PRO_TAG = 3;
 const STATS_KEY = "wordleStats";
 const VERLAUF_KEY = "wordleVerlauf";
 const SPIEL_KEY = "wordleSpiel";
+const SERIE_KEY = "wordleSerie";
+const HART_KEY = "wordleHartModus";
 
 /* So lange bleibt eine Meldung stehen. */
 const MELDUNG_MS = 2400;
 
 /* Der Stand des Tages: die Rätsel mit ihren bisherigen Versuchen. */
 let tag = null;
-let runde = 0;
 let raetsel = [];
 
 /* Welches Rätsel gerade offen ist. Die Eingabezeile samt Schreibmarke
@@ -50,7 +51,7 @@ let verdeckteZeile = -1;
 
 /* Gezählt wird in ../wortraten/statistik.js – Quordle führt dieselben
    Zahlen unter eigenen Schlüsseln, und die Tabelle sieht gleich aus. */
-const statistik = macheStatistik(STATS_KEY, VERLAUF_KEY);
+const statistik = macheStatistik(STATS_KEY, VERLAUF_KEY, SERIE_KEY);
 
 /* ---------------------------------------------------------------------
    Spielstand
@@ -64,7 +65,6 @@ const statistik = macheStatistik(STATS_KEY, VERLAUF_KEY);
 function speichereSpiel() {
   schreibSpeicher(SPIEL_KEY, {
     tag: tag,
-    runde: runde,
     versuche: raetsel.map((r) => r.versuche),
   });
 }
@@ -73,17 +73,16 @@ function speichereSpiel() {
 function ladeSpiel() {
   const gespeichert = liesSpeicher(SPIEL_KEY, null);
   tag = heutigerTag();
-  runde = 0;
 
-  /* Ein Spielstand von gestern ist wertlos: Das Datum bestimmt die Wörter. */
-  if (gespeichert && gespeichert.tag === tag && typeof gespeichert.runde === "number") {
-    runde = gespeichert.runde;
-  }
+  /* Ein Spielstand von gestern ist wertlos: Das Datum bestimmt die Wörter.
+     Ein Stand aus der Zeit der Zusatzrunden trägt ein Feld `runde` – die
+     Wörter dazu gibt es nicht mehr, also zählt er als nicht vorhanden. */
+  const brauchbar = gespeichert && gespeichert.tag === tag && !gespeichert.runde;
 
-  const woerter = woerterFuerTag(SPIEL, tag, runde, RAETSEL_PRO_TAG);
+  const woerter = woerterFuerTag(SPIEL, tag, 0, RAETSEL_PRO_TAG);
   raetsel = woerter.map((wort, i) => {
     let versuche = [];
-    if (gespeichert && gespeichert.tag === tag && gespeichert.runde === runde &&
+    if (brauchbar &&
         Array.isArray(gespeichert.versuche) && Array.isArray(gespeichert.versuche[i])) {
       /* Nur übernehmen, was auch heute noch ein gültiger Versuch wäre –
          ein von Hand verbogener Speicher soll das Feld nicht zerlegen. */
@@ -105,6 +104,40 @@ function istGewonnen(r) {
   return r.versuche.length > 0 && r.versuche[r.versuche.length - 1] === r.wort;
 }
 
+/** Das Tagespensum: erst wenn alle drei stehen, zählt der Tag für die Serie. */
+function tagGeschafft() {
+  for (let i = 0; i < raetsel.length; i++) if (!istGewonnen(raetsel[i])) return false;
+  return true;
+}
+
+/* ---------------------------------------------------------------------
+   Harter Modus
+
+   Die Auflagen selbst stehen in ../wortraten/regeln.js. Hier steht nur,
+   ob er an ist – und das bleibt über Tage hinweg stehen: Wer hart spielt,
+   will das morgen wieder.
+
+   Der Schalter lässt sich jederzeit umlegen, auch mitten in einem Rätsel.
+   Ihn zu verriegeln, sobald der erste Versuch steht, wäre strenger als
+   nötig: Was schon abgegeben ist, lässt sich ohnehin nicht zurückholen,
+   und die Auflagen gelten ab dem nächsten Versuch für alles, was bis
+   dahin aufgedeckt wurde – nachträglich leichter wird es dadurch nicht.
+   --------------------------------------------------------------------- */
+
+let hartModus = liesSpeicher(HART_KEY, false) === true;
+
+function setzeHartModus(an) {
+  hartModus = !!an;
+  schreibSpeicher(HART_KEY, hartModus);
+  zeigeHartModus();
+}
+
+/** Der Merker oben im Spielbildschirm, damit man weiß, woran man ist. */
+function zeigeHartModus() {
+  document.getElementById("hart-chip").classList.toggle("hidden", !hartModus);
+  document.getElementById("hart-modus").checked = hartModus;
+}
+
 /* ---------------------------------------------------------------------
    Startbildschirm
    --------------------------------------------------------------------- */
@@ -119,11 +152,33 @@ function zeigeStartbildschirm() {
   let zeile = wochentage[datum.getDay()] + ", " +
     String(datum.getDate()).padStart(2, "0") + "." +
     String(datum.getMonth() + 1).padStart(2, "0") + "." + datum.getFullYear();
-  if (runde > 0) zeile += " · Zusatzrunde " + runde;
   document.getElementById("tages-zeile").textContent = zeile;
 
   zeigeRaetselListe();
+  zeigeHartModus();
+  zeigeSerie();
   statistik.zeigeTabelle("stats-table-body");
+}
+
+function zeigeSerie() {
+  const stand = statistik.serie(tag);
+  document.getElementById("serie-aktuell").textContent = String(stand.aktuell);
+  document.getElementById("serie-best").textContent = String(stand.best);
+
+  const offen = raetsel.filter((r) => !istGewonnen(r)).length;
+  let hinweis;
+  if (stand.heuteGeschafft) {
+    hinweis = "Heute geschafft – morgen geht es weiter.";
+  } else if (offen === raetsel.length) {
+    hinweis = stand.aktuell > 0
+      ? "Alle drei lösen, dann wächst die Serie."
+      : "Alle drei an einem Tag lösen startet eine Serie.";
+  } else {
+    hinweis = "Noch " + offen + (offen === 1 ? " Rätsel" : " Rätsel") + " bis der Tag zählt.";
+  }
+  document.getElementById("serie-hinweis").textContent = hinweis;
+
+  document.getElementById("serie").classList.toggle("ist-aktiv", stand.aktuell > 0);
 }
 
 function zeigeRaetselListe() {
@@ -180,6 +235,7 @@ function oeffneRaetsel(nr) {
   document.getElementById("end-overlay").classList.add("hidden");
   document.getElementById("game-screen").classList.remove("hidden");
   document.getElementById("versuch-max").textContent = String(VERSUCHE_MAX);
+  zeigeHartModus();
 
   baueWechsel();
   baueBrett();
@@ -393,7 +449,22 @@ function pruefeVersuch() {
     ruettle();
     return;
   }
+  if (hartModus) {
+    /* Geprüft wird gegen alles, was bis hierher aufgedeckt ist – auch
+       gegen Versuche aus einer Runde, in der der Schalter noch aus war. */
+    const verstoss = verstossImHartenModus(wort, harteAuflagen(r.versuche, r.wort));
+    if (verstoss) {
+      meldung("Harter Modus: " + verstoss);
+      ruettle();
+      return;
+    }
+  }
 
+  /* Der Versuch geht durch – eine Meldung von der letzten Ablehnung hat
+     hier nichts mehr zu suchen. Im harten Modus kommen Ablehnungen oft
+     genug vor, dass eine stehengebliebene sonst zum nächsten Versuch
+     gehört zu werden scheint. */
+  meldung("");
   if (r.versuche.length === 0) statistik.merkeGestartet();
   r.versuche.push(wort);
   eingabe.leeren();
@@ -408,6 +479,9 @@ function pruefeVersuch() {
     if (istFertig(r)) {
       const gewonnen = istGewonnen(r);
       statistik.merkeBeendet(gewonnen, r.versuche.length);
+      /* Die Serie hängt am ganzen Tag, nicht am einzelnen Rätsel – sie
+         rückt erst vor, wenn das dritte steht. */
+      if (tagGeschafft()) statistik.merkeTagGeschafft(tag);
       zeigeEnde(gewonnen);
     }
   });
@@ -485,13 +559,9 @@ function zeigeEnde(gewonnen) {
    Knöpfe und Tasten
    --------------------------------------------------------------------- */
 
-document.getElementById("neue-raetsel").addEventListener("click", function () {
-  const angefangen = raetsel.some((r) => r.versuche.length > 0 && !istFertig(r));
-  if (angefangen && !confirm("Es läuft noch ein Rätsel. Trotzdem drei neue ziehen?")) return;
-  runde += 1;
-  raetsel = woerterFuerTag(SPIEL, tag, runde, RAETSEL_PRO_TAG).map((wort) => ({ wort: wort, versuche: [] }));
-  speichereSpiel();
-  zeigeStartbildschirm();
+
+document.getElementById("hart-modus").addEventListener("change", function () {
+  setzeHartModus(this.checked);
 });
 
 document.getElementById("stats-reset").addEventListener("click", function () {

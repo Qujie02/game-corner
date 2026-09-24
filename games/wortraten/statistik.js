@@ -32,12 +32,16 @@ function schreibSpeicher(schluessel, wert) {
   try { localStorage.setItem(schluessel, JSON.stringify(wert)); } catch (e) { /* egal */ }
 }
 
-function macheStatistik(statsSchluessel, verlaufSchluessel) {
+function macheStatistik(statsSchluessel, verlaufSchluessel, serieSchluessel) {
 
   function ladeVerlauf() {
     const v = liesSpeicher(verlaufSchluessel, []);
     return Array.isArray(v) ? v : [];
   }
+
+  /* Das Zählen der Tage steht in ../serie.js – Starstruck führt dieselbe
+     Serie unter eigenem Schlüssel. */
+  const serie = macheSerie(serieSchluessel);
 
   function hubZahlen() {
     const stats = liesSpeicher(statsSchluessel, {});
@@ -76,7 +80,11 @@ function macheStatistik(statsSchluessel, verlaufSchluessel) {
         localStorage.removeItem(statsSchluessel);
         localStorage.removeItem(verlaufSchluessel);
       } catch (e) { /* egal */ }
+      serie.zuruecksetzen();
     },
+
+    merkeTagGeschafft: function (tag) { serie.merkeTagGeschafft(tag); },
+    serie: function (heute) { return serie.stand(heute); },
 
     /** Füllt die Tabelle mit den Spalten "Alle" und "Letzte 10". */
     zeigeTabelle: function (koerperId) {
